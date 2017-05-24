@@ -1,0 +1,62 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: canal-etcd
+  namespace: kube-system
+  labels:
+    k8s-app: canal-etcd
+spec:
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+      labels:
+        k8s-app: canal-etcd
+    spec:
+      # Only run this pod on the master.
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      hostNetwork: true
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+        - name: canal-etcd
+          image: quay.io/coreos/etcd:v3.1.4
+          env:
+            - name: ETCD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          command: ["/bin/sh","-c"]
+          args: ["/usr/local/bin/etcd --name=calico --data-dir=/var/etcd/calico-data --advertise-client-urls=http://$ETCD_IP:6666 --listen-client-urls=http://0.0.0.0:6666 --listen-peer-urls=http://0.0.0.0:6667"]
+          volumeMounts:
+            - name: var-etcd
+              mountPath: /var/etcd
+      volumes:
+        - name: var-etcd
+          hostPath:
+            path: /var/etcd
+
+---
+
+# This manfiest installs the Service which gets traffic to the Calico
+# etcd.
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s-app: canal-etcd
+  name: canal-etcd
+  namespace: kube-system
+spec:
+  # Select the canal-etcd pod running on the master.
+  selector:
+    k8s-app: canal-etcd
+  # This ClusterIP needs to be known in advance, since we cannot rely
+  # on DNS to get access to etcd.
+  clusterIP: 10.3.0.136
+  ports:
+    - port: 6666
