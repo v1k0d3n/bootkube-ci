@@ -13,7 +13,6 @@ spec:
       labels:
         k8s-app: canal-etcd
     spec:
-      # Only run this pod on the master.
       nodeSelector:
         node-role.kubernetes.io/master: ""
       hostNetwork: true

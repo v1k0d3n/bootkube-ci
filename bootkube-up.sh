@@ -1,18 +1,5 @@
 #!/bin/bash
-# Copyright 2017 The Bootkube-CI Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+#!/bin/bash
 # BootKube Deployment (FINAL):
 
 ## NEW INSTALLATIONS:
@@ -23,8 +10,11 @@ export CNI_VERSION=v0.5.2                   ### CNI VERSION                 ###
 export HELM_VERSION=v2.3.1                  ### HELM VERSION                ###
 export BOOTKUBE_VERSION=v0.4.1              ### BOOTKUBE VERSION            ###
 export KUBERNETES_VERSION=v1.6.2            ### KUBERNETES VERSION          ###
-export KUBE_SDN='canal'                     ### SDN SELECTION               ###
+export KUBE_SDN='calico'                    ### SDN SELECTION               ###
+export KUBE_POD_CIDR='192.168.0.0/16'       ### SDN POD CIDR RANGE          ###
+export KUBE_SVC_CIDR='10.96.0.0/16'         ### SDN SERVICE CIDR RANGE      ###
 export KUBE_HW='ens3'                       ### MODIFY FOR YOUR ENVIRONMENT ###
+export KUBE_DNS_API='kubernetes.default'    ### DNS API ENDPOINT            ###
 export NSERVER01='10.3.0.10'                ### DO NOT MODIFY FOR CEPH PV   ###
 export NSERVER02='192.168.1.70'             ### MODIFY FOR YOUR ENVIRONMENT ###
 export NSERVER03='8.8.8.8'                  ### MODIFY FOR YOUR ENVIRONMENT ###
@@ -43,7 +33,7 @@ search $NSEARCH01 $NSEARCH02
 EOF"
 
 ### PREPARE: /etc/hosts:
-sudo -E bash -c 'echo '$KUBE_IP' '$HOSTNAME' '$HOSTNAME'.'$NSEARCH02' kubernetes >> /etc/hosts'
+sudo -E bash -c 'echo '$KUBE_IP' '$HOSTNAME' '$HOSTNAME'.'$NSEARCH02' '$KUBE_DNS_API' >> /etc/hosts'
 
 ### PREPARE: /etc/systemd/system/kubelet.service
 sudo -E bash -c 'cat <<EOF > /etc/systemd/system/kubelet.service
@@ -103,7 +93,7 @@ sudo rm -rf /home/$USER/bin
 
 
 ### RENDER ASSETS:
-sudo /usr/bin/docker run -v /home/ubuntu:/home/ubuntu quay.io/coreos/bootkube:$BOOTKUBE_VERSION /bootkube render --asset-dir=/home/ubuntu/.bootkube --experimental-self-hosted-etcd --etcd-servers=http://10.3.0.15:12379 --api-servers=https://kubernetes:443
+sudo /usr/bin/docker run -v /home/ubuntu:/home/ubuntu quay.io/coreos/bootkube:$BOOTKUBE_VERSION /bootkube render --asset-dir=/home/ubuntu/.bootkube --experimental-self-hosted-etcd --etcd-servers=http://10.3.0.15:12379 --api-servers=https://$KUBE_DNS_API:443 --pod-cidr=$KUBE_POD_CIDR --service-cidr=$KUBE_SVC_CIDR
 sudo rm -rf /home/ubuntu/.bootkube/manifests/kube-flannel*
 
 ### REQUIRED FOR CEPH/OPTIONAL ALL OTHERS:
@@ -144,8 +134,8 @@ sudo kubectl cluster-info
 sleep 10
 
 ### WAIT FOR KUBERNETES API TO COME UP CLEANLY, THEN APPLY FOLLOWING LABELS AND MANIFESTS:
-sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/$KUBE_SDN-node=true
+sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/$KUBE_SDN-node=true --overwrite
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/master="" --overwrite
-sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f deploy-sdn/$KUBE_SDN
+sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f ./deploy-sdn/$KUBE_SDN
 
 printf "\nCOMPLETE!\n"
