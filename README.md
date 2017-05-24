@@ -11,7 +11,7 @@ For Calico to work correctly, you will need to change the following flags in the
 ```
 export NSERVER01='10.96.0.10'               ### MODIFY FOR CEPH PVC         ###
 export KUBE_SDN='calico'                    ### SDN SELECTION               ###
-export KUBE_POD_CIDR='192.168.0.0/16'       ### SDN POD CIDR RANGE          ###
+export KUBE_POD_CIDR='10.25.0.0/16'         ### SDN POD CIDR RANGE          ###
 export KUBE_SVC_CIDR='10.96.0.0/16'         ### SDN SERVICE CIDR RANGE      ###
 export KUBE_DNS_API='kubernetes.default'    ### DNS API ENDPOINT            ###
 ```
