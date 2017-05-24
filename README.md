@@ -6,10 +6,10 @@ If you wish to use this repository for CI or for bringing up a Kubernetes cluste
 
 ## Calico L3
 
-For Calico to work correctly, you will need to change the following flags:
+For Calico to work correctly, you will need to change the following flags in the `bootkube-up.sh` script:
 
 ```
-export KUBE_SDN='canal'                     ### SDN SELECTION               ###
+export KUBE_SDN='calico'                    ### SDN SELECTION               ###
 export KUBE_POD_CIDR='192.168.0.0/16'       ### SDN POD CIDR RANGE          ###
 export KUBE_SVC_CIDR='10.96.0.0/16'         ### SDN SERVICE CIDR RANGE      ###
 export KUBE_DNS_API='kubernetes.default'    ### DNS API ENDPOINT            ###
@@ -17,10 +17,10 @@ export KUBE_DNS_API='kubernetes.default'    ### DNS API ENDPOINT            ###
 
 ## Canal L2
 
-For Canal to work correctly, you will need to change the following flags:
+For Canal to work correctly, change these flags to the following:
 
 ```
-export KUBE_SDN='calico'                    ### SDN SELECTION               ###
+export KUBE_SDN='canal'                     ### SDN SELECTION               ###
 export KUBE_POD_CIDR='10.2.0.0/16'          ### SDN POD CIDR RANGE          ###
 export KUBE_SVC_CIDR='10.3.0.0/24'          ### SDN SERVICE CIDR RANGE      ###
 export KUBE_DNS_API='kubernetes'            ### DNS API ENDPOINT            ###
