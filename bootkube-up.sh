@@ -112,6 +112,8 @@ sudo chmod 644 /home/ubuntu/.kube/config
 nohup sudo bash -c 'bootkube start --asset-dir=/home/ubuntu/.bootkube &>/dev/null &'
 
 ### WAIT FOR KUBERNETES ENVIRONMENT TO COME UP:
+declare -r GREEN="\033[0;32m"
+
 function echo_green {
   echo -e "${GREEN}$1"; tput sgr0
 }
