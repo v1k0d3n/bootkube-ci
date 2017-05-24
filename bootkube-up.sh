@@ -33,7 +33,7 @@ search $NSEARCH01 $NSEARCH02
 EOF"
 
 ### PREPARE: /etc/hosts:
-sudo -E bash -c 'echo '$KUBE_IP' '$HOSTNAME' '$HOSTNAME'.'$NSEARCH02' '$KUBE_DNS_API' >> /etc/hosts'
+sudo -E bash -c 'echo '$KUBE_IP' '$HOSTNAME' '$HOSTNAME'.'$NSEARCH02' '$KUBE_DNS_API' kubernetes >> /etc/hosts'
 
 ### PREPARE: /etc/systemd/system/kubelet.service
 sudo -E bash -c 'cat <<EOF > /etc/systemd/system/kubelet.service
