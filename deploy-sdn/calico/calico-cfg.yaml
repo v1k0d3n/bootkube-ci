@@ -39,3 +39,12 @@ data:
             "kubeconfig": "/etc/cni/net.d/__KUBECONFIG_FILENAME__"
         }
     }
+  ippool.yaml: |
+      apiVersion: v1
+      kind: ipPool
+      metadata:
+        cidr: 10.25.0.0/16
+      spec:
+        ipip:
+          enabled: true
+        nat-outgoing: true
