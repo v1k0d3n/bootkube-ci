@@ -32,8 +32,13 @@ nameserver $NSERVER03
 search $NSEARCH01 $NSEARCH02
 EOF"
 
-### PREPARE: /etc/hosts:
-sudo -E bash -c 'echo '$KUBE_IP' '$HOSTNAME' '$HOSTNAME'.'$NSEARCH02' '$KUBE_DNS_API' kubernetes >> /etc/hosts'
+### PREPARE: /etc/hosts with idempotency (hostess):
+wget https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_amd64
+sudo mv hostess_linux_amd64 /usr/local/bin/hostess
+sudo chmod +x /usr/local/bin/hostess
+
+#sudo -E bash -c 'echo '$KUBE_IP' '$HOSTNAME' '$HOSTNAME'.'$NSEARCH02' '$KUBE_DNS_API' >> /etc/hosts'
+sudo hostess add $KUBE_DNS_API $KUBE_IP
 
 ### PREPARE: /etc/systemd/system/kubelet.service
 sudo -E bash -c 'cat <<EOF > /etc/systemd/system/kubelet.service

@@ -37,5 +37,6 @@ printf "Removing bootkube environment from system..."
   sudo rm -rf /opt/cni
   sudo rm -rf /home/$USER/.bootkube
   sudo ip link set flannel.1 down
+  sudo chmod +x /usr/local/bin/hostess
 } &> /dev/null
 printf "\nCOMPLETE!\n"
