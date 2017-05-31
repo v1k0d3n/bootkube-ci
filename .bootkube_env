@@ -1,0 +1,18 @@
+### PREPARE THE ENVIRONMENT:
+export BOOTKUBE_DIR='/home/ubuntu'         ### BOOTKUBE-CI DIRECTORY       ###
+export CNI_VERSION=v0.5.2                   ### CNI VERSION                 ###
+export HELM_VERSION=v2.3.1                  ### HELM VERSION                ###
+export BOOTKUBE_VERSION=v0.4.1              ### BOOTKUBE VERSION            ###
+export KUBERNETES_VERSION=v1.6.2            ### KUBERNETES VERSION          ###
+export KUBE_SDN='calico'                    ### SDN SELECTION               ###
+export KUBE_POD_CIDR='10.25.0.0/16'         ### SDN POD CIDR RANGE          ###
+export KUBE_SVC_CIDR='10.96.0.0/16'         ### SDN SERVICE CIDR RANGE      ###
+export KUBE_HW='ens3'                       ### MODIFY FOR YOUR ENVIRONMENT ###
+export KUBE_DNS_API='kubernetes.default'    ### DNS API ENDPOINT            ###
+export NSERVER01='10.96.0.10'               ### MODIFY FOR CEPH PVC         ###
+export NSERVER02='192.168.1.70'             ### MODIFY FOR YOUR ENVIRONMENT ###
+export NSERVER03='8.8.8.8'                  ### MODIFY FOR YOUR ENVIRONMENT ###
+export NSEARCH01='svc.cluster.local'        ### MODIFY FOR YOUR ENVIRONMENT ###
+export NSEARCH02='jinkit.com'               ### MODIFY FOR YOUR ENVIRONMENT ###
+export KUBE_IMAGE='v1k0d3n/hyperkube-amd64' ### MODIFY FOR YOUR ENVIRONMENT ###
+export KUBE_IP=$(ip a s dev $KUBE_HW | awk '/inet /{gsub("/.*", "");print $2}')

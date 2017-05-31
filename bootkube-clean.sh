@@ -14,13 +14,18 @@
 # limitations under the License.
 #
 # Cleaning up nodes is simple:
+### Declare colors to use during the running of this script:
+declare -r GREEN="\033[0;32m"
+
+function echo_green {
+  echo -e "${GREEN}$1"; tput sgr0
+}
+
+source .bootkube_env
 printf "Removing bootkube environment from system..."
 { sudo systemctl stop kubelet.service
-  sudo docker rm bootkube-render
   sudo docker stop $(sudo docker ps -a | grep k8s| cut -c1-20 | xargs sudo docker stop)
   sudo docker rm -f $(sudo docker ps -a | grep k8s| cut -c1-20 | xargs sudo docker stop)
-  sudo docker rm -f $(sudo docker ps -a | grep bootkube| cut -c1-20 | xargs sudo docker stop)
-  sudo docker rm -f $(sudo docker ps -a | grep bootkube| cut -c1-20 | xargs sudo docker stop)
   sudo rm -rf /etc/kubernetes/
   sudo rm -rf /var/etcd
   sudo rm -rf /var/run/calico
@@ -35,8 +40,12 @@ printf "Removing bootkube environment from system..."
   sudo rm -rf /usr/local/bin/kubectl
   sudo rm -rf /usr/local/bin/helm
   sudo rm -rf /opt/cni
-  sudo rm -rf /home/$USER/.bootkube
+  sudo rm -rf $BOOTKUBE_DIR/.bootkube
   sudo ip link set flannel.1 down
-  sudo chmod +x /usr/local/bin/hostess
+  sudo rm -rf /etc/resolv.conf
+  sudo hostess del $KUBE_DNS_API $KUBE_IP
+  sudo hostess del kubernetes $KUBE_IP
+  sudo cp /home/ubuntu/bootkube-ci/backups/resolv.conf /etc/resolv.conf
 } &> /dev/null
-printf "\nCOMPLETE!\n"
+
+echo_green "\nCOMPLETE!\n"
