@@ -2,14 +2,14 @@ Bootkube-CI is a simple Kubernetes environment that can be used for a number of 
 
 # Deployment Instructions:
 
-If you wish to use this repository for CI or for bringing up a Kubernetes cluster, simply clone and edit the `bootkube-up.sh` script. Currently, two SDN's are optional and included (Calico is default).
+If you wish to use this repository for CI or for bringing up a Kubernetes cluster, simply clone and edit the `.bootkube_env` file to match your environment. Currently, two SDN's are optional and included (Calico is default).
 
 Included with this repository are the concepts of "add-ons": other deployment tests that you may want to run in sequence with a Kubernetes self-hosted cluster. Using these are just as simple and straight-forward as using the deployment itself. So if you wanted to deploy [openstack-helm](https://github.com/openstack/openstack-helm) for example,  all that would be required is the following:
 
 ```
 git clone https://github.com/v1k0d3n/bootkube-ci.git
 
-## make any variable modifications via your CI platform of choice to both bootkube-up.sh and ./deploy-addons/openstack-helm-up.sh
+## make any variable modifications via your CI platform of choice to both .bootkube-env and ./deploy-addons/openstack-helm-up.sh
 ## and deploy
 
 ./bootkube-ci/bootkube-up.sh
