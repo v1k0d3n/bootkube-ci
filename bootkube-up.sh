@@ -98,7 +98,7 @@ ExecStart=/usr/local/bin/kubelet \\
     --exit-on-lock-contention \\
     --pod-manifest-path=/etc/kubernetes/manifests \\
     --allow-privileged \\
-    --cluster_dns='$NSERVER02','$NSERVER03','$NSERVER01' \\
+    --cluster_dns='$NSERVER01','$NSERVER02','$NSERVER03' \\
     --cluster_domain=cluster.local \\
     --node-labels= \\
     --hostname-override='$KUBE_IP' \\
@@ -124,7 +124,7 @@ ExecStart=/usr/local/bin/kubelet \\
     --exit-on-lock-contention \\
     --pod-manifest-path=/etc/kubernetes/manifests \\
     --allow-privileged \\
-    --cluster_dns='$NSERVER02','$NSERVER03','$NSERVER01' \\
+    --cluster_dns='$NSERVER01','$NSERVER02','$NSERVER03' \\
     --cluster_domain=cluster.local \\
     --node-labels= \\
     --hostname-override='$KUBE_IP' \\

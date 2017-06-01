@@ -45,7 +45,7 @@ printf "Removing bootkube environment from system..."
   sudo rm -rf /etc/resolv.conf
   sudo hostess del $KUBE_DNS_API $KUBE_IP
   sudo hostess del kubernetes $KUBE_IP
-  sudo cp /home/ubuntu/bootkube-ci/backups/resolv.conf /etc/resolv.conf
+  sudo cp $BOOTKUBE_DIR/bootkube-ci/backups/resolv.conf /etc/resolv.conf
 } &> /dev/null
 
 echo_green "\nCOMPLETE!\n"

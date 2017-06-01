@@ -14,17 +14,17 @@
 # limitations under the License.
 #
 ### PREPARE THE ENVIRONMENT:
-export OSH_BRANCH='4f1aecb9c4514895a19804ba46d77e8903060f40' ### GIT COMMIT HAS OR BRANCH NAME ###
+source ../.bootkube_env                                      ### COLLECT VARS FROM ENV FILE    ###
+export OSH_BRANCH='master'                                   ### GIT COMMIT HAS OR BRANCH NAME ###
 export SIGIL_VERSION='0.4.0'                                 ### SIGIL VERSION                 ###
-export KUBE_POD_CIDR='10.25.0.0/16'                          ### SDN POD CIDR RANGE            ###
-export BOOTKUBE_CI_DIR="/home/$USER/bootkube-ci"             ### BOOTKUBE-CI DIR               ###
 
 ### APPLY DEVELOPMENT RBAC POLICY:
-kubectl apply -f $BOOTKUBE_CI_DIR/deploy-rbac/dev.yaml --validate=false
+kubectl apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-rbac/dev.yaml --validate=false
+kubectl apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-rbac/ceph.yaml --validate=false
 
 ### PREPARE DEPENDENCIES:
 sudo apt-get install -y python-minimal ceph-common
-git clone https://github.com/openstack/openstack-helm.git /home/$USER/openstack-helm && cd /home/$USER/openstack-helm && git checkout $OSH_BRANCH
+git clone https://github.com/openstack/openstack-helm.git $BOOTKUBE_DIR/bootkube-ci/openstack-helm && cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm && git checkout $OSH_BRANCH
 # v1k0d3n: Do we really need a variable below?
 curl -L https://github.com/gliderlabs/sigil/releases/download/v0.4.0/sigil_0.4.0_Linux_x86_64.tgz | sudo tar -zxC /usr/local/bin
 
@@ -43,13 +43,13 @@ sudo mkdir -p /var/lib/openstack-helm/ceph
 sudo mkdir -p /var/lib/nova/instances
 export osd_cluster_network=$KUBE_POD_CIDR
 export osd_public_network=$KUBE_POD_CIDR
-cd /home/$USER/openstack-helm/helm-toolkit/utils/secret-generator
+cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm/helm-toolkit/utils/secret-generator
 ./generate_secrets.sh all `./generate_secrets.sh fsid`
-cd /home/$USER/openstack-helm/
+cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm/
 make
 
 ### BRING UP THE ENVIRONMENT:
-helm install --name=ceph local/ceph --namespace=ceph
+helm install --name=ceph local/ceph --set images.daemon=quay.io/v1k0d3n/ceph-daemon:tag-build-master-jewel-ubuntu-16.04 --set network.public="$KUBE_POD_CIDR" --namespace=ceph
 helm install --name=bootstrap-ceph local/bootstrap --namespace=ceph
 helm install --name=bootstrap-openstack local/bootstrap --namespace=openstack
 helm install --name=mariadb local/mariadb --namespace=openstack
