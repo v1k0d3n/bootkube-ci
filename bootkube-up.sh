@@ -16,6 +16,7 @@
 ### Declare colors to use during the running of this script:
 declare -r GREEN="\033[0;32m"
 declare -r RED="\033[0;31m"
+declare -r YELLOW="\033[0;33m"
 
 function echo_green {
   echo -e "${GREEN}$1"; tput sgr0
@@ -23,11 +24,14 @@ function echo_green {
 function echo_red {
   echo -e "${RED}$1"; tput sgr0
 }
+function echo_yellow {
+  echo -e "${YELLOW}$1"; tput sgr0
+}
 
 
 ## NEW INSTALLATIONS:
 echo_green "\nPhase I: Installing system prerequisites:"
-pkg="vim ethtool traceroute git build-essential lldpd socat"
+pkg="vim curl ethtool traceroute git build-essential lldpd socat"
 
 for pkg in $pkg; do
     if sudo dpkg --get-selections | grep -q "^$pkg[[:space:]]*install$" >/dev/null; then
@@ -68,15 +72,25 @@ KUBE_IP: $KUBE_IP \n \n"
 ### PREPARE: /etc/resolv.conf
 echo_green "\nPhase III: Preparing system DNS:"
 sudo cp /etc/resolv.conf $BOOTKUBE_DIR/bootkube-ci/backups/
-sudo sed -i '1s/^/nameserver '$NSERVER01'\n/' /etc/resolv.conf
-sudo sed -i '1s/^/search '$KUBE_DNS_API' '$NSEARCH01' '$NSEARCH02'\n/' /etc/resolv.conf
+#sudo sed -i '1s/^/nameserver '$NSERVER01'\n/' /etc/resolv.conf
+#sudo sed -i '1s/^/search '$KUBE_DNS_API' '$NSEARCH01' '$NSEARCH02'\n/' /etc/resolv.conf
+
+### PREPARE: /etc/resolv.conf
+sudo -E bash -c "cat <<EOF > /etc/resolvconf/resolv.conf.d/head
+nameserver $NSERVER01
+EOF"
+sudo -E bash -c "cat <<EOF > /etc/resolvconf/resolv.conf.d/base
+search kubernetes $KUBE_DNS_API $NSEARCH01 $NSEARCH02
+EOF"
+sudo resolvconf -u
+echo_yellow "\e[3mBootkube-CI Users: '/etc/resolv.conf is not a symbolic link' warning above is OK!\e[0m"
 
 ### PREPARE: /etc/hosts with idempotency (hostess):
-wget https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_amd64
-sudo mv hostess_linux_amd64 /usr/local/bin/hostess
-sudo chmod +x /usr/local/bin/hostess
-
-#sudo -E bash -c 'echo '$KUBE_IP' '$HOSTNAME' '$HOSTNAME'.'$NSEARCH02' '$KUBE_DNS_API' >> /etc/hosts'
+### DOWNLOAD: bootkube
+if [ ! -e /usr/local/bin/hostess ]; then
+    sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_amd64
+    sudo chmod +x /usr/local/bin/hostess
+fi
 sudo hostess add $KUBE_DNS_API $KUBE_IP
 sudo hostess add kubernetes $KUBE_IP
 
@@ -137,39 +151,51 @@ EOF'
 
 ### DOWNLOAD: bootkube
 echo_green "\nPhase V: Downloading Bootkube required binaries:"
+OLD_DIR=`pwd`
+mkdir -p /tmp/download
+cd /tmp/download
 
 ### DOWNLOAD: bootkube
-if ! which bootkube > /dev/null; then
-   echo -e "Bootkube $BOOTKUBE_VERSION is not installed on this host. Installing version requested... \c"
-      wget https://github.com/kubernetes-incubator/bootkube/releases/download/$BOOTKUBE_VERSION/bootkube.tar.gz && \
-      tar zxvf bootkube.tar.gz && \
-      sudo chmod +x bin/linux/bootkube && \
-      sudo cp bin/linux/bootkube /usr/local/bin/
+if [ ! -e /tmp/download/$BOOTKUBE_VERSION-bootkube.tgz ]; then
+    wget -O $BOOTKUBE_VERSION-bootkube.tgz https://github.com/kubernetes-incubator/bootkube/releases/download/$BOOTKUBE_VERSION/bootkube.tar.gz
+    tar zxvf $BOOTKUBE_VERSION-bootkube.tgz
+    chmod +x bin/linux/bootkube
+    sudo cp bin/linux/bootkube /usr/local/bin/
 fi
 
 ### DOWNLOAD: kubectl
-wget http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubectl
-sudo chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
-### DOWNLOAD: cni
-wget https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-amd64-$CNI_VERSION.tgz
-sudo mkdir -p /opt/cni/bin
-sudo tar -xf cni-amd64-$CNI_VERSION.tgz -C /opt/cni/bin/
-### DOWNLOAD: kubelet
-wget http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubelet
-sudo mv kubelet /usr/local/bin/kubelet
-chmod +x /usr/local/bin/kubelet
-### DOWNLOAD: helm
-wget -O /tmp/helm-$HELM_VERSION-linux-amd64.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz
-tar zxvf /tmp/helm-$HELM_VERSION-linux-amd64.tar.gz -C /tmp/
-chmod +x /tmp/linux-amd64/helm
-sudo mv /tmp/linux-amd64/helm /usr/local/bin/
-sudo rm -rf /tmp/linux-amd64
-### CLEANUP:
-sudo rm -rf $BOOTKUBE_DIR/cni-amd64-$CNI_VERSION.tgz
-sudo rm -rf $BOOTKUBE_DIR/bootkube.tar.gz
-sudo rm -rf $BOOTKUBE_DIR/bin
+if [ ! -e /tmp/download/$KUBERNETES_VERSION-kubectl-amd64 ]; then
+    wget -O $KUBERNETES_VERSION-kubectl-amd64 http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubectl
+    chmod +x $KUBERNETES_VERSION-kubectl-amd64
+    sudo cp $KUBERNETES_VERSION-kubectl-amd64 /usr/local/bin/kubectl
+fi
 
+### DOWNLOAD: kubelet
+if [ ! -e /usr/local/bin/kubelet ]; then
+    wget -O $KUBERNETES_VERSION-kubelet-amd64 http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubelet
+    chmod +x $KUBERNETES_VERSION-kubelet-amd64
+    sudo cp /tmp/download/$KUBERNETES_VERSION-kubelet-amd64 /usr/local/bin/kubelet
+fi
+
+### DOWNLOAD: cni
+if [ ! -e /tmp/download/$CNI_VERSION-cni-amd64.tgz ]; then
+    wget -O $CNI_VERSION-cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-amd64-$CNI_VERSION.tgz
+    sudo mkdir -p /opt/cni/bin
+    sudo tar -xf $CNI_VERSION-cni-amd64.tgz -C /opt/cni/bin/
+fi
+
+### DOWNLOAD: helm
+if [ ! -e /tmp/download/$HELM_VERSION-helm-amd64.tgz ]; then
+    wget -O $HELM_VERSION-helm-amd64.tgz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz
+    tar zxvf $HELM_VERSION-helm-amd64.tgz -C /tmp/download/
+    chmod +x /tmp/download/linux-amd64/helm
+    sudo cp /tmp/download/linux-amd64/helm /usr/local/bin/
+fi
+
+### CLEANUP:
+cd $OLD_DIR
+#rm -rf /tmp/download
+echo_green "\nComplete!"
 
 ### RENDER ASSETS:
 echo_green "\nPhase VI: Running Bootkube to render the Kubernetes assets:"
