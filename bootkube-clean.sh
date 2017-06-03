@@ -36,10 +36,11 @@ printf "Removing bootkube environment from system..."
   sudo rm -rf /var/run/lock/api-server.lock
   sudo rm -rf /var/run/lock/etcd.lock
   sudo rm -rf /var/run/lock/pod-checkpointer.lock
-  sudo rm -rf /usr/local/bin/bootkube
-  sudo rm -rf /usr/local/bin/kubectl
-  sudo rm -rf /usr/local/bin/helm
-  sudo rm -rf /opt/cni
+### These can optionally be enabled, but a menu is soon to come to clean up the following binaries:
+#  sudo rm -rf /usr/local/bin/bootkube
+#  sudo rm -rf /usr/local/bin/kubectl
+#  sudo rm -rf /usr/local/bin/helm
+#  sudo rm -rf /opt/cni
   sudo rm -rf $BOOTKUBE_DIR/.bootkube
   sudo ip link set flannel.1 down
   sudo rm -rf /etc/resolv.conf
