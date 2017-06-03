@@ -72,8 +72,6 @@ KUBE_IP: $KUBE_IP \n \n"
 ### PREPARE: /etc/resolv.conf
 echo_green "\nPhase III: Preparing system DNS:"
 sudo cp /etc/resolv.conf $BOOTKUBE_DIR/bootkube-ci/backups/
-#sudo sed -i '1s/^/nameserver '$NSERVER01'\n/' /etc/resolv.conf
-#sudo sed -i '1s/^/search '$KUBE_DNS_API' '$NSEARCH01' '$NSEARCH02'\n/' /etc/resolv.conf
 
 ### PREPARE: /etc/resolv.conf
 sudo -E bash -c "cat <<EOF > /etc/resolvconf/resolv.conf.d/head
