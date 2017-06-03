@@ -151,50 +151,50 @@ EOF'
 
 ### DOWNLOAD: bootkube
 echo_green "\nPhase V: Downloading Bootkube required binaries:"
-OLD_DIR=`pwd`
-mkdir -p /tmp/download
-cd /tmp/download
+export TMPDIR=/tmp/download
+mkdir -p $TMPDIR
 
 ### DOWNLOAD: bootkube
-if [ ! -e /tmp/download/$BOOTKUBE_VERSION-bootkube.tgz ]; then
-    wget -O $BOOTKUBE_VERSION-bootkube.tgz https://github.com/kubernetes-incubator/bootkube/releases/download/$BOOTKUBE_VERSION/bootkube.tar.gz
-    tar zxvf $BOOTKUBE_VERSION-bootkube.tgz
-    chmod +x bin/linux/bootkube
-    sudo cp bin/linux/bootkube /usr/local/bin/
+if [[ ! -e '$TMPDIR'/'$BOOTKUBE_VERSION'-bootkube.tgz && ! -e /usr/local/bin/bootkube ]]; then
+    wget -O $TMPDIR/$BOOTKUBE_VERSION-bootkube.tgz https://github.com/kubernetes-incubator/bootkube/releases/download/$BOOTKUBE_VERSION/bootkube.tar.gz
+    tar zxvf $TMPDIR/$BOOTKUBE_VERSION-bootkube.tgz -C $TMPDIR/
+    mv $TMPDIR/bin/ $TMPDIR/$BOOTKUBE_VERSION-bootkube-amd64
+    chmod +x $TMPDIR/$BOOTKUBE_VERSION-bootkube-amd64/linux/bootkube
+    sudo cp $TMPDIR/$BOOTKUBE_VERSION-bootkube-amd64/linux/bootkube /usr/local/bin/
 fi
 
 ### DOWNLOAD: kubectl
-if [ ! -e /tmp/download/$KUBERNETES_VERSION-kubectl-amd64 ]; then
-    wget -O $KUBERNETES_VERSION-kubectl-amd64 http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubectl
-    chmod +x $KUBERNETES_VERSION-kubectl-amd64
-    sudo cp $KUBERNETES_VERSION-kubectl-amd64 /usr/local/bin/kubectl
+if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubectl-amd64 && ! -e /usr/local/bin/kubectl ]]; then
+    wget -O $TMPDIR/$KUBERNETES_VERSION-kubectl-amd64 http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubectl
+    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubectl-amd64
+    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubectl-amd64 /usr/local/bin/kubectl
 fi
 
 ### DOWNLOAD: kubelet
-if [ ! -e /usr/local/bin/kubelet ]; then
-    wget -O $KUBERNETES_VERSION-kubelet-amd64 http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubelet
-    chmod +x $KUBERNETES_VERSION-kubelet-amd64
-    sudo cp /tmp/download/$KUBERNETES_VERSION-kubelet-amd64 /usr/local/bin/kubelet
+if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubelet-amd64 && ! -e /usr/local/bin/kubelet ]]; then
+    wget -O $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64 http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubelet
+    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64
+    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64 /usr/local/bin/kubelet
 fi
 
 ### DOWNLOAD: cni
-if [ ! -e /tmp/download/$CNI_VERSION-cni-amd64.tgz ]; then
-    wget -O $CNI_VERSION-cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-amd64-$CNI_VERSION.tgz
+if [[ ! -e '$TMPDIR'/'$CNI_VERSION'-cni-amd64.tgz && ! -e /opt/cni/bin ]]; then
+    wget -O $TMPDIR/$CNI_VERSION-cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-amd64-$CNI_VERSION.tgz
     sudo mkdir -p /opt/cni/bin
-    sudo tar -xf $CNI_VERSION-cni-amd64.tgz -C /opt/cni/bin/
+    sudo tar -xf $TMPDIR/$CNI_VERSION-cni-amd64.tgz -C /opt/cni/bin/
 fi
 
 ### DOWNLOAD: helm
-if [ ! -e /tmp/download/$HELM_VERSION-helm-amd64.tgz ]; then
-    wget -O $HELM_VERSION-helm-amd64.tgz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz
-    tar zxvf $HELM_VERSION-helm-amd64.tgz -C /tmp/download/
+if [[ ! -e '$TMPDIR'/'$HELM_VERSION'-helm-amd64.tgz && ! -e /usr/local/bin/ ]]; then
+    wget -O $TMPDIR/$HELM_VERSION-helm-amd64.tgz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz
+    tar zxvf $TMPDIR/$HELM_VERSION-helm-amd64.tgz -C /tmp/download/
     chmod +x /tmp/download/linux-amd64/helm
     sudo cp /tmp/download/linux-amd64/helm /usr/local/bin/
 fi
 
 ### CLEANUP:
-cd $OLD_DIR
-#rm -rf /tmp/download
+cd $BOOTKUBE_DIR
+sudo rm -rf $TMPDIR/linux-amd64 
 echo_green "\nComplete!"
 
 ### RENDER ASSETS:
@@ -241,9 +241,10 @@ sleep 10
 echo_green "\nPhase X: Cluster created, and now deploying requested SDN along with additional labels:"
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/$KUBE_SDN-node=true --overwrite
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/master="" --overwrite
-sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f ./deploy-sdn/$KUBE_SDN
+sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN
 
 
 echo_green "\nPhase XI: Writing Kubernetes environment cluster-info dump to $BOOTKUBE_DIR/bootkube-ci/log/cluster-info.log:"
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig cluster-info dump > $BOOTKUBE_DIR/bootkube-ci/log/cluster-info.log
 echo_green "\nCOMPLETE!\n"
+
