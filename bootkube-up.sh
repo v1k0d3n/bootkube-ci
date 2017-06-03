@@ -185,16 +185,17 @@ if [[ ! -e '$TMPDIR'/'$CNI_VERSION'-cni-amd64.tgz && ! -e /opt/cni/bin ]]; then
 fi
 
 ### DOWNLOAD: helm
-if [[ ! -e '$TMPDIR'/'$HELM_VERSION'-helm-amd64.tgz && ! -e /usr/local/bin/ ]]; then
+if [[ ! -e '$TMPDIR'/'$HELM_VERSION'-helm-amd64.tgz && ! -e /usr/local/bin/helm ]]; then
     wget -O $TMPDIR/$HELM_VERSION-helm-amd64.tgz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz
-    tar zxvf $TMPDIR/$HELM_VERSION-helm-amd64.tgz -C /tmp/download/
-    chmod +x /tmp/download/linux-amd64/helm
-    sudo cp /tmp/download/linux-amd64/helm /usr/local/bin/
+    tar zxvf $TMPDIR/$HELM_VERSION-helm-amd64.tgz -C $TMPDIR/
+    mv $TMPDIR/linux-amd64/ $TMPDIR/$HELM_VERSION-helm-amd64
+    chmod +x $TMPDIR/$HELM_VERSION-helm-amd64/helm
+    sudo cp $TMPDIR/$HELM_VERSION-helm-amd64/helm /usr/local/bin/
 fi
 
 ### CLEANUP:
 cd $BOOTKUBE_DIR
-sudo rm -rf $TMPDIR/linux-amd64 
+sudo rm -rf $TMPDIR/linux-amd64
 echo_green "\nComplete!"
 
 ### RENDER ASSETS:
@@ -247,4 +248,3 @@ sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f $BOOTKUBE_DIR/boot
 echo_green "\nPhase XI: Writing Kubernetes environment cluster-info dump to $BOOTKUBE_DIR/bootkube-ci/log/cluster-info.log:"
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig cluster-info dump > $BOOTKUBE_DIR/bootkube-ci/log/cluster-info.log
 echo_green "\nCOMPLETE!\n"
-
