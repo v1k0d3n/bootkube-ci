@@ -200,6 +200,11 @@ echo_green "\nComplete!"
 echo_green "\nPhase VI: Running Bootkube to render the Kubernetes assets:"
 bootkube render --asset-dir=$BOOTKUBE_DIR/.bootkube --experimental-self-hosted-etcd --etcd-servers=http://10.3.0.15:12379 --api-servers=https://$KUBE_DNS_API:443 --pod-cidr=$KUBE_POD_CIDR --service-cidr=$KUBE_SVC_CIDR
 sudo rm -rf $BOOTKUBE_DIR/.bootkube/manifests/kube-flannel*
+if [ $KUBE_SDN = "kube-router" ]; then
+   echo_yellow "\nSDN variable is set to kube-router. Proceeding to remove kube-proxy manifests for Bootkube!" && sudo rm -rf $BOOTKUBE_DIR/.bootkube/manifests/kube-proxy.yaml
+else
+   echo_green "\nSDN is set to $KUBE_SDN. No additional changes are required for $KUBE_SDN!"
+fi
 
 ### REQUIRED FOR CEPH/OPTIONAL ALL OTHERS:
 echo_green "\nPhase VII: If requested, modifying the rendered assets to include a custom Hyperkube image:"
