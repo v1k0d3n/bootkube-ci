@@ -211,9 +211,15 @@ sudo systemctl daemon-reload
 sudo systemctl restart kubelet.service
 sudo cp $BOOTKUBE_DIR/.bootkube/auth/kubeconfig /etc/kubernetes/
 sudo cp -a $BOOTKUBE_DIR/.bootkube/* /etc/kubernetes/
-sudo mkdir -p $BOOTKUBE_DIR/.kube
-sudo cp /etc/kubernetes/kubeconfig ~/.kube/config
+
+### Ensuring that kubectl has a proper configuration file in the $USER/.kube directory, and backing up the old config file if required:
+if [[ ! -e ~/.kube/config ]]; then
+     echo_green "Copying Kubernetes config to $HOME/.kube/config" && sudo mkdir -p ~/.kube && sudo cp /etc/kubernetes/kubeconfig ~/.kube/config
+ else
+     echo_yellow "Moving old $HOME/.kube/config to $HOME/.kube/config.backup" && sudo cp ~/.kube/config ~/.kube/config.backup && sudo cp /etc/kubernetes/kubeconfig ~/.kube/config
+fi
 sudo chmod 644 ~/.kube/config
+
 
 echo_green "\nPhase IX: Running Bootkube start to bring up the temporary Kubernetes self-hosted control plane:"
 nohup sudo bash -c 'bootkube start --asset-dir='$BOOTKUBE_DIR'/.bootkube' &>$BOOTKUBE_DIR/bootkube-ci/log/bootkube-start.log 2>&1 &
