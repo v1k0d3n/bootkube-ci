@@ -41,6 +41,7 @@ printf "Removing bootkube environment from system..."
 #  sudo rm -rf /usr/local/bin/kubectl
 #  sudo rm -rf /usr/local/bin/helm
 #  sudo rm -rf /opt/cni
+  sudo rm -rf $BOOTKUBE_DIR/bootkube-ci/log/cluster-info*
   sudo rm -rf $BOOTKUBE_DIR/.bootkube
   sudo ip link set flannel.1 down
   sudo rm -rf /etc/resolv.conf

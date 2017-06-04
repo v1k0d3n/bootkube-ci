@@ -227,7 +227,7 @@ sudo chmod 644 ~/.kube/config
 
 
 echo_green "\nPhase IX: Running Bootkube start to bring up the temporary Kubernetes self-hosted control plane:"
-nohup sudo bash -c 'bootkube start --asset-dir='$BOOTKUBE_DIR'/.bootkube' &>$BOOTKUBE_DIR/bootkube-ci/log/bootkube-start.log 2>&1 &
+nohup sudo bash -c 'bootkube start --asset-dir='$BOOTKUBE_DIR'/.bootkube' >$BOOTKUBE_DIR/bootkube-ci/log/bootkube-start.log 2>&1 &
 
 ### WAIT FOR KUBERNETES ENVIRONMENT TO COME UP:
 echo -e -n "Waiting for master components to start..."
@@ -254,6 +254,19 @@ sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN
 
 
-echo_green "\nPhase XI: Writing Kubernetes environment cluster-info dump to $BOOTKUBE_DIR/bootkube-ci/log/cluster-info.log:"
-sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig cluster-info dump > $BOOTKUBE_DIR/bootkube-ci/log/cluster-info.log
+echo_green "\nPhase XI: Writing Kubernetes environment cluster-info logs:"
+### WAIT FOR KUBERNETES ENVIRONMENT TO COME UP:
+echo -e -n "Waiting for all services to be in a running state..."
+while true; do
+  creating_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n kube-system --no-headers 2>/dev/null | grep "ContainerCreating" | grep "kube" | wc -l)
+  ### Expect all components to be out of a "ContainerCreating" state before collecting log data (this includes CrashLoopBackOff states):
+  if [ "$creating_count" -eq 0 ]; then
+    break
+  fi
+  echo -n "."
+  sleep 1
+done
+export CLUSTER_TIMESTAMP="$(date +%s)"
+sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig cluster-info dump --all-namespaces --output-directory "$BOOTKUBE_DIR/bootkube-ci/log/cluster-info-$CLUSTER_TIMESTAMP"
+echo_yellow "\nCluster logs can be found in $BOOTKUBE_DIR/bootkube-ci/log/cluster-info-$CLUSTER_TIMESTAMP"
 echo_green "\nCOMPLETE!\n"
