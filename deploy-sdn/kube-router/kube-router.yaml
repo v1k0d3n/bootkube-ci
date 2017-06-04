@@ -69,7 +69,7 @@ spec:
           path: /lib/modules
         name: lib-modules
       - hostPath:
-          path: /etc/kubernetes/cni/net.d
+          path: /etc/cni/net.d
         name: cni
       - name: kubeconfig
         hostPath:
