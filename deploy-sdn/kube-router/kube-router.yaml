@@ -65,12 +65,12 @@ spec:
         key: node-role.kubernetes.io/master
         operator: Exists
       volumes:
-      - hostPath:
+      - name: lib-modules
+        hostPath:
           path: /lib/modules
-        name: lib-modules
-      - hostPath:
+      - name: cni
+        hostPath:
           path: /etc/cni/net.d
-        name: cni
       - name: kubeconfig
         hostPath:
           path: /etc/kubernetes/kubeconfig
