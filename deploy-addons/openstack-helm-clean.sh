@@ -13,6 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+kubectl delete pvc mysql-data-mariadb-0 -n openstack
+export osh_array=`(kubectl get all -n openstack) | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/')`
+export ceph_array=`(kubectl get all -n ceph) | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/')`
+for osh_k8s in "${osh_array[@]}"
+do
+    'kubectl delete $osh_k8s --grace-period=0 --force -n openstack'
+done
+for ceph_k8s in "${ceph_array[@]}"
+do
+    'kubectl delete $ceph_k8s --grace-period=0 --force -n ceph'
+done
+kubectl delete namespace openstack
 helm delete --purge magnum
 helm delete --purge mistral
 helm delete --purge senlin

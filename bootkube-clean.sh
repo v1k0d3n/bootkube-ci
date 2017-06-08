@@ -44,7 +44,7 @@ printf "Removing bootkube environment from system..."
   sudo rm -rf $BOOTKUBE_DIR/bootkube-ci/log/cluster-info*
   sudo rm -rf $BOOTKUBE_DIR/.bootkube
   sudo ip link set flannel.1 down
-  sudo rm -rf /etc/resolv.conf
+#  sudo rm -rf /etc/resolv.conf
   sudo hostess del $KUBE_DNS_API $KUBE_IP
   sudo hostess del kubernetes $KUBE_IP
   sudo cp $BOOTKUBE_DIR/bootkube-ci/backups/resolv.conf /etc/resolv.conf
