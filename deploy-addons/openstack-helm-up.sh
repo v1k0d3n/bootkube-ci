@@ -15,8 +15,8 @@
 #
 ### PREPARE THE ENVIRONMENT:
 source ../.bootkube_env                                      ### COLLECT VARS FROM ENV FILE    ###
-export OSH_BRANCH='249536bc181ee23b14349d355f6f1544c055b4b1' ### GIT COMMIT HAS OR BRANCH NAME ###
-export SIGIL_VERSION='0.4.0'                                 ### SIGIL VERSION                 ###
+export OSH_BRANCH='239b83b1b51f20091fd88bcff7b1994406488adf' ### GIT COMMIT HAS OR BRANCH NAME ###
+# export SIGIL_VERSION='0.4.0'                                 ### SIGIL VERSION                 ###
 
 ### APPLY DEVELOPMENT RBAC POLICY:
 kubectl apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-rbac/dev.yaml --validate=false
@@ -25,7 +25,7 @@ kubectl apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-rbac/ceph.yaml --validate=fals
 ### PREPARE DEPENDENCIES:
 sudo apt-get install -y python-minimal ceph-common
 git clone https://github.com/openstack/openstack-helm.git $BOOTKUBE_DIR/bootkube-ci/openstack-helm && cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm && git checkout $OSH_BRANCH
-git apply ../deploy-addons/changes.patch
+# git apply ../deploy-addons/changes.patch
 # v1k0d3n: Do we really need a variable below?
 curl -L https://github.com/gliderlabs/sigil/releases/download/v0.4.0/sigil_0.4.0_Linux_x86_64.tgz | sudo tar -zxC /usr/local/bin
 
