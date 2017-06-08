@@ -1,0 +1,70 @@
+diff --git a/ceph/values.yaml b/ceph/values.yaml
+index ade9681..4b9f372 100644
+--- a/ceph/values.yaml
++++ b/ceph/values.yaml
+@@ -22,7 +22,8 @@ service:
+     name: ceph-mon
+
+ images:
+-  daemon: docker.io/library/ceph/daemon:tag-build-master-jewel-ubuntu-16.04
++  #  daemon: docker.io/library/ceph/daemon:tag-build-master-jewel-ubuntu-16.04
++  daemon: docker.io/library/ceph/daemon:latest
+   pull_policy: IfNotPresent
+
+ labels:
+diff --git a/cinder/templates/configmap-etc.yaml b/cinder/templates/configmap-etc.yaml
+index 84442a1..86e5fc0 100644
+--- a/cinder/templates/configmap-etc.yaml
++++ b/cinder/templates/configmap-etc.yaml
+@@ -11,32 +11,25 @@
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+-
+ {{- include "cinder.conf.cinder_values_skeleton" .Values.conf.cinder | trunc 0 -}}
+-
+ {{- if empty .Values.conf.cinder.keystone_authtoken.keystonemiddleware.auth_token.auth_uri -}}
+-{{- tuple "identity" "internal" "api" . | include "helm-toolkit.keystone_endpoint_uri_lookup"| set .Values.conf.cinder.keystone_authtoken.keystonemiddleware.auth_token "auth_uri" | quote | trunc 0 -}}
++{{- tuple "identity" "internal" "api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup"| set .Values.conf.cinder.keystone_authtoken.keystonemiddleware.auth_token "auth_uri" | quote | trunc 0 -}}
+ {{- end -}}
+-
+ # FIXME(alanmeadows) fix for broken keystonemiddleware oslo config gen in newton - will remove in future
+ {{- if empty .Values.conf.cinder.keystone_authtoken.keystonemiddleware.auth_token.auth_url -}}
+-{{- tuple "identity" "internal" "api" . | include "helm-toolkit.keystone_endpoint_uri_lookup"| set .Values.conf.cinder.keystone_authtoken.keystonemiddleware.auth_token "auth_url" | quote | trunc 0 -}}
++{{- tuple "identity" "internal" "api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup"| set .Values.conf.cinder.keystone_authtoken.keystonemiddleware.auth_token "auth_url" | quote | trunc 0 -}}
+ {{- end -}}
+-
+ {{- if empty .Values.conf.cinder.keystone_authtoken.keystonemiddleware.auth_token.memcached_servers -}}
+ {{- tuple "oslo_cache" "internal" "memcache" . | include "helm-toolkit.endpoints.hostname_endpoint_uri_lookup" | set .Values.conf.cinder.keystone_authtoken.keystonemiddleware.auth_token "memcached_servers" | quote | trunc 0 -}}
+ {{- end -}}
+-
+ {{- if empty .Values.conf.cinder.database.oslo.db.connection -}}
+-{{- tuple "oslo_db" "internal" "user" "mysql" . | include "helm-toolkit.authenticated_endpoint_uri_lookup"| set .Values.conf.cinder.database.oslo.db "connection" | quote | trunc 0 -}}
++{{- tuple "oslo_db" "internal" "user" "mysql" . | include "helm-toolkit.endpoints.authenticated_endpoint_uri_lookup"| set .Values.conf.cinder.database.oslo.db "connection" | quote | trunc 0 -}}
+ {{- end -}}
+-
+ {{- if empty .Values.conf.cinder.default.oslo.messaging.transport_url -}}
+-{{- tuple "oslo_messaging" "internal" "user" "amqp" . | include "helm-toolkit.authenticated_endpoint_uri_lookup" | set .Values.conf.cinder.default.oslo.messaging "transport_url" | quote | trunc 0 -}}
++{{- tuple "oslo_messaging" "internal" "user" "amqp" . | include "helm-toolkit.endpoints.authenticated_endpoint_uri_lookup" | set .Values.conf.cinder.default.oslo.messaging "transport_url" | quote | trunc 0 -}}
+ {{- end -}}
+-
+ {{- if empty .Values.conf.cinder.default.cinder.glance_api_servers -}}
+-{{- tuple "image" "internal" "api" . | include "helm-toolkit.keystone_endpoint_uri_lookup"| set .Values.conf.cinder.default.cinder "glance_api_servers" | quote | trunc 0 -}}
++{{- tuple "image" "internal" "api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup"| set .Values.conf.cinder.default.cinder "glance_api_servers" | quote | trunc 0 -}}
+ {{- end -}}
+
+ apiVersion: v1
+diff --git a/neutron/templates/bin/_neutron-openvswitch-agent.sh.tpl b/neutron/templates/bin/_neutron-openvswitch-agent.sh.tpl
+index 5d5e4af..f3a8195 100644
+--- a/neutron/templates/bin/_neutron-openvswitch-agent.sh.tpl
++++ b/neutron/templates/bin/_neutron-openvswitch-agent.sh.tpl
+@@ -29,7 +29,8 @@ timeout 3m neutron-sanity-check --config-file /etc/neutron/neutron.conf --config
+ tunnel_interface="{{- .Values.network.interface.tunnel -}}"
+ if [ -z "${tunnel_interface}" ] ; then
+     # search for interface with default routing
+-    tunnel_interface=$(ip r | grep default | grep -oP '(?<=dev ).*')
++    # tunnel_interface=$(ip r | grep default | grep -oP '(?<=dev ).*')
++    tunnel_interface=$(ip r | grep default | awk '{print $5}')
+ fi
+
+ # determine local-ip dynamically based on interface provided but only if tunnel_types is not null
