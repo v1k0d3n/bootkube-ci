@@ -14,15 +14,15 @@
 # limitations under the License.
 #
 kubectl delete pvc mysql-data-mariadb-0 -n openstack
-export osh_array=`(kubectl get all -n openstack) | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/')`
-export ceph_array=`(kubectl get all -n ceph) | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/')`
-for osh_k8s in "${osh_array[@]}"
-do
-    'kubectl delete $osh_k8s --grace-period=0 --force -n openstack'
+kubectl delete pvc mysql-data-mariadb-1 -n openstack
+kubectl delete pvc mysql-data-mariadb-2 -n openstack
+export ceph_array=`(kubectl get all -n ceph | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/'))`
+for thing in $osh_array;do
+ `kubectl delete $thing --grace-period=0 --force -n openstack`
 done
-for ceph_k8s in "${ceph_array[@]}"
-do
-    'kubectl delete $ceph_k8s --grace-period=0 --force -n ceph'
+export osh_array=`(kubectl get all -n openstack | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/'))`
+for thing in $osh_array;do
+ `kubectl delete $thing --grace-period=0 --force -n openstack`
 done
 kubectl delete namespace openstack
 helm delete --purge magnum
