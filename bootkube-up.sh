@@ -233,7 +233,7 @@ nohup sudo bash -c 'bootkube start --asset-dir='$BOOTKUBE_DIR'/.bootkube' >$BOOT
 echo -e -n "Waiting for master components to start..."
 while true; do
   running_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n kube-system --no-headers 2>/dev/null | grep "Running" | grep "boot" | wc -l)
-  ### Expect 4 bootstrap components for a truly "Ready" state: etcd, apiserver, controller, and scheduler:
+  ### Expect 4 bootstrap components for a truly "Running" state: etcd, apiserver, controller, and scheduler:
   if [ "$running_count" -ge 4 ]; then
     break
   fi
@@ -258,8 +258,8 @@ echo_green "\nPhase XI: Writing Kubernetes environment cluster-info logs:"
 ### WAIT FOR KUBERNETES ENVIRONMENT TO COME UP:
 echo -e -n "Waiting for all services to be in a running state..."
 while true; do
-  creating_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n kube-system --no-headers 2>/dev/null | grep "ContainerCreating" | grep "kube" | wc -l)
-  ### Expect all components to be out of a "ContainerCreating" state before collecting log data (this includes CrashLoopBackOff states):
+  creating_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n kube-system --no-headers 2>/dev/null | egrep "i(Pending|ContainerCreating)" | grep "kube" | wc -l)
+  ### Expect all components to be out of a "Pending" state before collecting log data (this includes CrashLoopBackOff states):
   if [ "$creating_count" -eq 0 ]; then
     break
   fi

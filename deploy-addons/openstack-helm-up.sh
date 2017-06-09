@@ -15,12 +15,12 @@
 #
 ### PREPARE THE ENVIRONMENT:
 source ../.bootkube_env                                      ### COLLECT VARS FROM ENV FILE    ###
+export MARIADB_SIZE=15Gi                                     ### COLLECT VARS FROM ENV FILE    ###
 export OSH_BRANCH='239b83b1b51f20091fd88bcff7b1994406488adf' ### GIT COMMIT HAS OR BRANCH NAME ###
-# export SIGIL_VERSION='0.4.0'                                 ### SIGIL VERSION                 ###
+# export SIGIL_VERSION='0.4.0'                               ### SIGIL VERSION                 ###
 
 ### APPLY DEVELOPMENT RBAC POLICY:
 kubectl apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-rbac/dev.yaml --validate=false
-kubectl apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-rbac/ceph.yaml --validate=false
 
 ### PREPARE DEPENDENCIES:
 sudo apt-get install -y python-minimal ceph-common
@@ -40,7 +40,6 @@ helm init
 helm serve &
 helm repo remove stable
 helm repo add local "http://localhost:8879/charts"
-sudo mkdir -p /var/lib/openstack-helm/ceph
 sudo mkdir -p /var/lib/nova/instances
 export osd_cluster_network=$KUBE_POD_CIDR
 export osd_public_network=$KUBE_POD_CIDR
@@ -50,23 +49,38 @@ cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm/
 make
 
 ### BRING UP THE ENVIRONMENT:
+# NOTE: The line below would replace the ceph install just below in cases that favor a large /home/ and small / partitions.
+# If this is your case, uncomment the line below and comment the second ceph install line.
 # helm install --name=ceph local/ceph --set images.daemon=quay.io/v1k0d3n/ceph-daemon:tag-build-master-jewel-ubuntu-16.04 --set network.public="$KUBE_POD_CIDR" --set storage.osd_directory=/home/ceph/osd,storage.var_directory=/home/ceph/var,storage.mon_directory=/home/ceph/mon --namespace=ceph
 helm install --name=ceph local/ceph --set images.daemon=quay.io/v1k0d3n/ceph-daemon:tag-build-master-jewel-ubuntu-16.04 --set network.public="$KUBE_POD_CIDR" --namespace=ceph
 helm install --name=bootstrap-ceph local/bootstrap --namespace=ceph
 helm install --name=bootstrap-openstack local/bootstrap --namespace=openstack
-helm install --name=mariadb local/mariadb --set volume.size=15Gi --namespace=openstack
-exit
+# NOTE: The following lines create the claims in ceph for Glance (images) and cinder (volumes).
+echo -e -n "Waiting for all Ceph components to be in a running state..."
+while true; do
+  running_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n ceph --no-headers 2>/dev/null | grep "Running" | grep "ceph" | wc -l)
+  ### Expect all components to be out of a "ContainerCreating" state before collecting log data (this includes CrashLoopBackOff states):
+  if [ "$running_count" -ge 6 ]; then
+    break
+  fi
+  echo -n "."
+  sleep 1
+done
+helm install --name=mariadb local/mariadb --set volume.size=$MARIADB_SIZE --namespace=openstack
+kubectl exec -n ceph -it ceph-mon-0 ceph osd pool create volumes 25
+kubectl exec -n ceph -it ceph-mon-0 ceph osd pool create images 15
 helm install --name=rabbitmq local/rabbitmq --namespace=openstack
 helm install --name=rabbitmq-etcd local/etcd --namespace=openstack
 helm install --name=memcached local/memcached --namespace=openstack
-helm install --name=keystone local/keystone --namespace=openstack
+helm install --name=keystone local/keystone network.node_port_enable=true --namespace=openstack
 helm install --name=glance local/glance --namespace=openstack
 helm install --name=heat local/heat --namespace=openstack
 helm install --name=cinder local/cinder --namespace=openstack
 helm install --name=nova local/nova --namespace=openstack
 helm install --name=neutron local/neutron --namespace=openstack
-helm install --name=horizon local/horizon --namespace=openstack
+helm install --name=horizon local/horizon network.node_port_enable=true --namespace=openstack
+# Remove the exit statement if you wish any of the following Charts
+exit
 helm install --name=barbican local/barbican --namespace=openstack
-helm install --name=senlin local/senlin --namespace=openstack
 helm install --name=mistral local/mistral --namespace=openstack
 helm install --name=magnum local/magnum --namespace=openstack
