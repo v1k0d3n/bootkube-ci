@@ -16,14 +16,6 @@
 kubectl delete pvc mysql-data-mariadb-0 -n openstack
 kubectl delete pvc mysql-data-mariadb-1 -n openstack
 kubectl delete pvc mysql-data-mariadb-2 -n openstack
-export ceph_array=`(kubectl get all -n ceph | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/'))`
-for thing in $osh_array;do
- `kubectl delete $thing --grace-period=0 --force -n openstack`
-done
-export osh_array=`(kubectl get all -n openstack | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/'))`
-for thing in $osh_array;do
- `kubectl delete $thing --grace-period=0 --force -n openstack`
-done
 kubectl delete namespace openstack
 helm delete --purge magnum
 helm delete --purge mistral
@@ -49,3 +41,11 @@ sudo rm -rf /home/$USER/openstack-helm
 sudo rm -rf /usr/local/bin/sigil
 pkill -f 'helm serve'
 helm repo remove local
+export ceph_array=`(kubectl get all -n ceph | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/'))`
+for this in $ceph_array;do
+ `kubectl delete $this -n ceph`
+done
+export osh_array=`(kubectl get all -n openstack | (awk -F"," '{print $1}') | (cut -d' ' -f1) | (sed '1d') | (awk '/[^[:upper:] ]/'))`
+for that in $osh_array;do
+ `kubectl delete $that -n openstack`
+done
