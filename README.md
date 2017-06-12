@@ -22,7 +22,7 @@ git clone https://github.com/v1k0d3n/bootkube-ci.git
 
 The default behavior for this small project is to deploy the following:
 
-* Kubernetes [v1.6.2](https://github.com/kubernetes/kubernetes/releases/tag/v1.6.2) with `ceph-common` installed in the [Hyperkube](https://quay.io/repository/v1k0d3n/hyperkube-amd64?tab=tags) container (for Ceph PVC support)
+* Kubernetes [v1.6.4](https://github.com/kubernetes/kubernetes/releases/tag/v1.6.4) with `ceph-common` installed in the [Hyperkube](https://quay.io/repository/v1k0d3n/hyperkube-amd64?tab=tags) container (for Ceph PVC support)
 * All-In-One self-hosted Kubernetes cluster using [Bootkube](https://github.com/kubernetes-incubator/bootkube) (both for render and start)
 * Deploy Calico CNI/SDN with etcd for the Calico Policy Controller (POD_CIDR='10.25.0.0/16' and SVC_CIDR='10.96.0.0/16')
 * Kubernetes API endpoint can be discovered locally at https://kubernetes.default:443
