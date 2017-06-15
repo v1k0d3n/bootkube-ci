@@ -50,6 +50,7 @@ fi
 
 ### PREPARE THE ENVIRONMENT:
 source .bootkube_env
+echo "export KUBE_MASTER=$KUBE_IP" >> .bootkube_env
 echo_green "\nPhase II: Using the following variables during the deployment:"
 printf "BOOTKUBE_DIR: $BOOTKUBE_DIR
 CNI_VERSION: $CNI_VERSION
