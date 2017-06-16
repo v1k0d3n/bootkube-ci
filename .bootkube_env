@@ -1,6 +1,7 @@
 ### PREPARE THE ENVIRONMENT:
 export PROXY_ENABLED=true                   ### BOOTKUBE-CI DIRECTORY       ###
 export BOOTKUBE_DIR='/home/ubuntu'          ### BOOTKUBE-CI DIRECTORY       ###
+export TMPDIR='/tmp/download'               ### TEMP DOWNLOADS GO HERE      ###
 export CNI_VERSION=v0.5.2                   ### CNI VERSION                 ###
 export HELM_VERSION=v2.3.1                  ### HELM VERSION                ###
 export BOOTKUBE_VERSION=v0.4.4              ### BOOTKUBE VERSION            ###
