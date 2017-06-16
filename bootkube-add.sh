@@ -32,7 +32,7 @@ source .bootkube_env
 
 ## NEW INSTALLATIONS:
 echo_green "\nPhase I: Installing system prerequisites:"
-pkg="vim curl ethtool traceroute git build-essential lldpd socat"
+pkg="vim curl ethtool traceroute git build-essential lldpd socat ceph-common"
 
 for pkg in $pkg; do
     if sudo dpkg --get-selections | grep -q "^$pkg[[:space:]]*install$" >/dev/null; then
