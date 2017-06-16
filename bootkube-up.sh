@@ -150,7 +150,6 @@ EOF'
 
 ### DOWNLOAD: bootkube
 echo_green "\nPhase V: Downloading Bootkube required binaries:"
-export TMPDIR=/tmp/download
 mkdir -p $TMPDIR
 
 ### DOWNLOAD: bootkube

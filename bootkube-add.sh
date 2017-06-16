@@ -28,7 +28,6 @@ function echo_yellow {
   echo -e "${YELLOW}$1"; tput sgr0
 }
 
-export KUBE_MASTER=192.168.4.65
 source .bootkube_env
 
 ## NEW INSTALLATIONS:
