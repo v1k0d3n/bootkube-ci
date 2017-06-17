@@ -214,6 +214,7 @@ sudo grep -rl quay.io/coreos/hyperkube:$KUBERNETES_VERSION'_coreos.0' $BOOTKUBE_
 echo_green "\nPhase VIII: Preparing the environment for Kubernetes to run for the first time:"
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet.service
+sudo systemctl enable kubelet.service
 sudo cp $BOOTKUBE_DIR/.bootkube/auth/kubeconfig /etc/kubernetes/
 sudo cp -a $BOOTKUBE_DIR/.bootkube/* /etc/kubernetes/
 
