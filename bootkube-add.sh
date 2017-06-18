@@ -67,7 +67,7 @@ echo_yellow "\e[3mBootkube-CI Users: '/etc/resolv.conf is not a symbolic link' w
 ### PREPARE: /etc/hosts with idempotency (hostess):
 ### DOWNLOAD: bootkube
 if [ ! -e /usr/local/bin/hostess ]; then
-    sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_amd64
+    sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_$KUBEARCH
     sudo chmod +x /usr/local/bin/hostess
 fi
 sudo hostess add $KUBE_DNS_API $KUBE_MASTER
@@ -129,17 +129,17 @@ WantedBy=multi-user.target
 EOF'
 
 ### DOWNLOAD: kubelet
-if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubelet-amd64 && ! -e /usr/local/bin/kubelet ]]; then
-    wget -O $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64 http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubelet
-    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64
-    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64 /usr/local/bin/kubelet
+if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubelet-$KUBEARCH && ! -e /usr/local/bin/kubelet ]]; then
+    wget -O $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBEARCH http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/$KUBEARCH/kubelet
+    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBEARCH
+    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBEARCH /usr/local/bin/kubelet
 fi
 
 ### DOWNLOAD: cni
-if [[ ! -e '$TMPDIR'/'$CNI_VERSION'-cni-amd64.tgz && ! -e /opt/cni/bin ]]; then
-    wget -O $TMPDIR/$CNI_VERSION-cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-amd64-$CNI_VERSION.tgz
+if [[ ! -e '$TMPDIR'/'$CNI_VERSION'-cni-$KUBEARCH.tgz && ! -e /opt/cni/bin ]]; then
+    wget -O $TMPDIR/$CNI_VERSION-cni-$KUBEARCH.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-$KUBEARCH-$CNI_VERSION.tgz
     sudo mkdir -p /opt/cni/bin
-    sudo tar -xf $TMPDIR/$CNI_VERSION-cni-amd64.tgz -C /opt/cni/bin/
+    sudo tar -xf $TMPDIR/$CNI_VERSION-cni-$KUBEARCH.tgz -C /opt/cni/bin/
 fi
 
 ### DEPLOY KUBERNETES SELF-HOSTED CLUSTER:
