@@ -55,6 +55,10 @@ export KUBE_DNS_API='kubernetes'            ### DNS API ENDPOINT            ###
 
 Two areas should be considered for customizing the Bootkube-CI deployment. The first area that may need modified are the variables at the top of the `bootkube-up.sh` script. The second place you may want to consider is related to the deployed SDN manifests in the [deploy-sdn](./deploy-sdn) folder. Feel free to submit an issue, or contact me on [Kubernetes Slack](https://kubernetes.slack.com/) (`v1k0d3n`).
 
+## Adding additional Architectures:
+
+Right now, amd64 is currently supported, however, framework has been placed, and have started testing using arm64 (aarch64 or arm64v8[hf]). Can be adjusted in .bootkube.env.
+
 ## TODO:
 
 This repo is in heavy development at this time. It is understood that several improvements can be made. If you have any feature requests or comments, please feel free to submit a pull request of create an issue.
