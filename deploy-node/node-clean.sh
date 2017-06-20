@@ -31,20 +31,7 @@ function echo_yellow {
 source .bootkube_env
 
 ## NEW INSTALLATIONS:
-for node in $(cat ./deploy-node/nodes); do
-  echo -e "Creating bootkube-ci directory on $node in...";
-  ssh $node "sudo mkdir -p $BOOTKUBE_DIR/bootkube-ci";
-  ssh $node "sudo chown -R $USER:$USER $BOOTKUBE_DIR/bootkube-ci";
-  echo -e "Copying bootkube-ci node files to $node...";
-  scp $BOOTKUBE_DIR/bootkube-ci/deploy-node/node-add.sh $node:$BOOTKUBE_DIR/bootkube-ci;
-  scp $BOOTKUBE_DIR/bootkube-ci/bootkube-clean.sh $node:$BOOTKUBE_DIR/bootkube-ci;
-  scp $BOOTKUBE_DIR/bootkube-ci/.bootkube_env $node:$BOOTKUBE_DIR/bootkube-ci;
-  sudo cp /etc/kubernetes/kubeconfig /tmp/kubeconfig
-  sudo chown $USER:$USER /tmp/kubeconfig
-  scp /tmp/kubeconfig $node:$BOOTKUBE_DIR/bootkube-ci;
-  echo -e "Attempting to deploy $node as a worker node...";
+for node in $(cat ./nodes); do
   ssh $node "cd $BOOTKUBE_DIR/bootkube-ci/ && \
-    sudo chown root:root $BOOTKUBE_DIR/bootkube-ci/kubeconfig && \
-    sudo mkdir -p $BOOTKUBE_DIR/bootkube-ci/backups/ && \
-    ./node-add.sh";
+    ./bootkube-clean.sh";
 done
