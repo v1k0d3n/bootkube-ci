@@ -67,7 +67,7 @@ NSERVER02: $NSERVER02
 NSERVER03: $NSERVER03
 NSEARCH01: $NSEARCH01
 NSEARCH02: $NSEARCH02
-KUBEARCH: $KUBEARCH
+KUBEARCH: $KUBE_ARCH
 KUBE_IMAGE: $KUBE_IMAGE
 KUBE_IP: $KUBE_IP \n \n"
 
@@ -88,7 +88,7 @@ echo_yellow "\e[3mBootkube-CI Users: '/etc/resolv.conf is not a symbolic link' w
 ### PREPARE: /etc/hosts with idempotency (hostess):
 ### DOWNLOAD: bootkube
 if [ ! -e /usr/local/bin/hostess ]; then
-    sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_$KUBEARCH
+    sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_$KUBE_ARCH
     sudo chmod +x /usr/local/bin/hostess
 fi
 sudo hostess add $KUBE_DNS_API $KUBE_IP
@@ -157,44 +157,44 @@ mkdir -p $TMPDIR
 if [[ ! -e '$TMPDIR'/'$BOOTKUBE_VERSION'-bootkube.tgz && ! -e /usr/local/bin/bootkube ]]; then
     wget -O $TMPDIR/$BOOTKUBE_VERSION-bootkube.tgz https://github.com/kubernetes-incubator/bootkube/releases/download/$BOOTKUBE_VERSION/bootkube.tar.gz
     tar zxvf $TMPDIR/$BOOTKUBE_VERSION-bootkube.tgz -C $TMPDIR/
-    mv $TMPDIR/bin/ $TMPDIR/$BOOTKUBE_VERSION-bootkube-$KUBEARCH
-    chmod +x $TMPDIR/$BOOTKUBE_VERSION-bootkube-$KUBEARCH/linux/bootkube
-    sudo cp $TMPDIR/$BOOTKUBE_VERSION-bootkube-$KUBEARCH/linux/bootkube /usr/local/bin/
+    mv $TMPDIR/bin/ $TMPDIR/$BOOTKUBE_VERSION-bootkube-$KUBE_ARCH
+    chmod +x $TMPDIR/$BOOTKUBE_VERSION-bootkube-$KUBE_ARCH/linux/bootkube
+    sudo cp $TMPDIR/$BOOTKUBE_VERSION-bootkube-$KUBE_ARCH/linux/bootkube /usr/local/bin/
 fi
 
 ### DOWNLOAD: kubectl
-if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubectl-$KUBEARCH && ! -e /usr/local/bin/kubectl ]]; then
-    wget -O $TMPDIR/$KUBERNETES_VERSION-kubectl-$KUBEARCH http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/$KUBEARCH/kubectl
-    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubectl-$KUBEARCH
-    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubectl-$KUBEARCH /usr/local/bin/kubectl
+if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubectl-$KUBE_ARCH && ! -e /usr/local/bin/kubectl ]]; then
+    wget -O $TMPDIR/$KUBERNETES_VERSION-kubectl-$KUBE_ARCH http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/$KUBEARCH/kubectl
+    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubectl-$KUBE_ARCH
+    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubectl-$KUBE_ARCH /usr/local/bin/kubectl
 fi
 
 ### DOWNLOAD: kubelet
-if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubelet-$KUBEARCH && ! -e /usr/local/bin/kubelet ]]; then
-    wget -O $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBEARCH http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/$KUBEARCH/kubelet
-    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBEARCH
-    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBEARCH /usr/local/bin/kubelet
+if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubelet-$KUBE_ARCH && ! -e /usr/local/bin/kubelet ]]; then
+    wget -O $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBE_ARCH http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/$KUBEARCH/kubelet
+    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBE_ARCH
+    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubelet-$KUBE_ARCH /usr/local/bin/kubelet
 fi
 
 ### DOWNLOAD: cni
-if [[ ! -e '$TMPDIR'/'$CNI_VERSION'-cni-$KUBEARCH.tgz && ! -e /opt/cni/bin ]]; then
-    wget -O $TMPDIR/$CNI_VERSION-cni-$KUBEARCH.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-$KUBEARCH-$CNI_VERSION.tgz
+if [[ ! -e '$TMPDIR'/'$CNI_VERSION'-cni-$KUBE_ARCH.tgz && ! -e /opt/cni/bin ]]; then
+    wget -O $TMPDIR/$CNI_VERSION-cni-$KUBE_ARCH.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-$KUBEARCH-$CNI_VERSION.tgz
     sudo mkdir -p /opt/cni/bin
-    sudo tar -xf $TMPDIR/$CNI_VERSION-cni-$KUBEARCH.tgz -C /opt/cni/bin/
+    sudo tar -xf $TMPDIR/$CNI_VERSION-cni-$KUBE_ARCH.tgz -C /opt/cni/bin/
 fi
 
 ### DOWNLOAD: helm
-if [[ ! -e '$TMPDIR'/'$HELM_VERSION'-helm-$KUBEARCH.tgz && ! -e /usr/local/bin/helm ]]; then
-    wget -O $TMPDIR/$HELM_VERSION-helm-$KUBEARCH.tgz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-$KUBEARCH.tar.gz
-    tar zxvf $TMPDIR/$HELM_VERSION-helm-$KUBEARCH.tgz -C $TMPDIR/
-    mv $TMPDIR/linux-$KUBEARCH/ $TMPDIR/$HELM_VERSION-helm-$KUBEARCH
-    chmod +x $TMPDIR/$HELM_VERSION-helm-$KUBEARCH/helm
-    sudo cp $TMPDIR/$HELM_VERSION-helm-$KUBEARCH/helm /usr/local/bin/
+if [[ ! -e '$TMPDIR'/'$HELM_VERSION'-helm-$KUBE_ARCH.tgz && ! -e /usr/local/bin/helm ]]; then
+    wget -O $TMPDIR/$HELM_VERSION-helm-$KUBE_ARCH.tgz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-$KUBEARCH.tar.gz
+    tar zxvf $TMPDIR/$HELM_VERSION-helm-$KUBE_ARCH.tgz -C $TMPDIR/
+    mv $TMPDIR/linux-$KUBE_ARCH/ $TMPDIR/$HELM_VERSION-helm-$KUBEARCH
+    chmod +x $TMPDIR/$HELM_VERSION-helm-$KUBE_ARCH/helm
+    sudo cp $TMPDIR/$HELM_VERSION-helm-$KUBE_ARCH/helm /usr/local/bin/
 fi
 
 ### CLEANUP:
 cd $BOOTKUBE_DIR
-sudo rm -rf $TMPDIR/linux-$KUBEARCH
+sudo rm -rf $TMPDIR/linux-$KUBE_ARCH
 echo_green "\nComplete!"
 
 ### RENDER ASSETS:

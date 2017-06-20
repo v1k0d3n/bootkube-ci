@@ -57,7 +57,7 @@ Two areas should be considered for customizing the Bootkube-CI deployment. The f
 
 ## Adding additional Architectures:
 
-Right now, amd64 is currently supported, however, framework has been placed, and have started testing using arm64 (aarch64 or arm64v8[hf]). Can be adjusted in .bootkube.env.
+Right now, amd64 is currently supported, however, framework has been placed, and have started testing using arm64 (aarch64 or arm64v8[hf]). Can be adjusted in .bootkube_env.
 
 ## TODO:
 
