@@ -40,6 +40,7 @@ Vagrant.configure("2") do |config|
 ### REPARE THE ENVIRONMENT:
 export PROXY_ENABLED=true                   ### BOOTKUBE-CI DIRECTORY       ###
 export BOOTKUBE_DIR='/home/vagrant'         ### BOOTKUBE-CI DIRECTORY       ###
+export TMPDIR='/home/vagrant/download'      ### TMPDIR FOR FILE DOWNLOADS   ###
 export CNI_VERSION=v0.5.2                   ### CNI VERSION                 ###
 export HELM_VERSION=v2.3.1                  ### HELM VERSION                ###
 export BOOTKUBE_VERSION=v0.4.4              ### BOOTKUBE VERSION            ###
@@ -58,6 +59,6 @@ export NSEARCH02='default.local'            ### MODIFY FOR YOUR ENVIRONMENT ###
 export KUBE_IMAGE='v1k0d3n/hyperkube-amd64' ### MODIFY FOR YOUR ENVIRONMENT ###
 export KUBE_IP='10.0.2.15'                  ###
 EOF
-    ./bootkube-up
+    sudo ./bootkube-up
 SHELL
 end
