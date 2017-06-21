@@ -16,6 +16,6 @@ export NSERVER02='192.168.1.70'             ### THE PRIMARY DNS SERVER      ###
 export NSERVER03='8.8.8.8'                  ### THE SECONDARY DNS SERVER    ###
 export NSEARCH01='svc.cluster.local'        ### MODIFY FOR YOUR ENVIRONMENT ###
 export NSEARCH02='jinkit.com'               ### MODIFY FOR YOUR ENVIRONMENT ###
-export KUBE_ARCH='amd64'                     ### MODIFY FOR YOUR ARCHITECTURE###
+export KUBE_ARCH='amd64'                    ### MODIFY FOR YOUR ARCHITECTURE###
 export KUBE_IMAGE='v1k0d3n/hyperkube-amd64' ### MODIFY FOR YOUR ENVIRONMENT ###
 export KUBE_IP=$(ip a s dev $KUBE_HW | awk '/inet /{gsub("/.*", "");print $2}')

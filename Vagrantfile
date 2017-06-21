@@ -58,6 +58,6 @@ export NSEARCH02='default.local'            ### MODIFY FOR YOUR ENVIRONMENT ###
 export KUBE_IMAGE='v1k0d3n/hyperkube-amd64' ### MODIFY FOR YOUR ENVIRONMENT ###
 export KUBE_IP='10.0.2.15'                  ###
 EOF
-    ./bootkube-up.sh
+    ./bootkube-up
 SHELL
 end
