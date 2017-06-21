@@ -28,10 +28,11 @@ function echo_yellow {
   echo -e "${YELLOW}$1"; tput sgr0
 }
 
-source .bootkube_env
+source ../.bootkube_env
 
 ## NEW INSTALLATIONS:
 for node in $(cat ./nodes); do
-  ssh $node "cd $BOOTKUBE_DIR/bootkube-ci/ && \
+  echo -e "Cleaning $node:"
+  ssh -tq $node "cd $BOOTKUBE_DIR/bootkube-ci/ && \
     ./bootkube-clean.sh";
 done
