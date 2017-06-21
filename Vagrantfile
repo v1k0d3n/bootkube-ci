@@ -44,6 +44,7 @@ export CNI_VERSION=v0.5.2                   ### CNI VERSION                 ###
 export HELM_VERSION=v2.3.1                  ### HELM VERSION                ###
 export BOOTKUBE_VERSION=v0.4.4              ### BOOTKUBE VERSION            ###
 export KUBERNETES_VERSION=v1.6.4            ### KUBERNETES VERSION          ###
+export KUBE_ARCH='amd64'                    ### MODIFY FOR YOUR ARCHITECTURE###
 export KUBE_SDN='calico'                    ### SDN SELECTION               ###
 export KUBE_POD_CIDR='10.25.0.0/16'         ### SDN POD CIDR RANGE          ###
 export KUBE_SVC_CIDR='10.96.0.0/16'         ### SDN SERVICE CIDR RANGE      ###
