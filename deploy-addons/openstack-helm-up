@@ -16,18 +16,19 @@
 ### PREPARE THE ENVIRONMENT:
 source ../.bootkube_env                                      ### COLLECT VARS FROM ENV FILE    ###
 export MARIADB_SIZE=15Gi                                     ### COLLECT VARS FROM ENV FILE    ###
-export OSH_BRANCH='239b83b1b51f20091fd88bcff7b1994406488adf' ### GIT COMMIT HAS OR BRANCH NAME ###
+export OSH_BRANCH='8ef5d946740bacb2af361761500e2204c365d5c7' ### GIT COMMIT HAS OR BRANCH NAME ###
 # export SIGIL_VERSION='0.4.0'                               ### SIGIL VERSION                 ###
 
 ### APPLY DEVELOPMENT RBAC POLICY:
-kubectl apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-rbac/dev.yaml --validate=false
+#kubectl apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-rbac/dev.yaml --validate=false
+kubectl update -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml --validate=false
 
 ### PREPARE DEPENDENCIES:
 sudo apt-get install -y python-minimal ceph-common
 git clone https://github.com/openstack/openstack-helm.git $BOOTKUBE_DIR/bootkube-ci/openstack-helm && cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm && git checkout $OSH_BRANCH
 # git apply ../deploy-addons/changes.patch
 # v1k0d3n: Do we really need a variable below?
-curl -L https://github.com/gliderlabs/sigil/releases/download/v0.4.0/sigil_0.4.0_Linux_x86_64.tgz | sudo tar -zxC /usr/local/bin
+#curl -L https://github.com/gliderlabs/sigil/releases/download/v0.4.0/sigil_0.4.0_Linux_x86_64.tgz | sudo tar -zxC /usr/local/bin
 
 ### LABEL THE NODES:
 kubectl label nodes openstack-control-plane=enabled --all --overwrite
@@ -43,18 +44,26 @@ helm repo add local "http://localhost:8879/charts"
 sudo mkdir -p /var/lib/nova/instances
 export osd_cluster_network=$KUBE_POD_CIDR
 export osd_public_network=$KUBE_POD_CIDR
-cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm/helm-toolkit/utils/secret-generator
-./generate_secrets.sh all `./generate_secrets.sh fsid`
-cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm/
+#cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm/helm-toolkit/utils/secret-generator
+#./generate_secrets.sh all `./generate_secrets.sh fsid`
+#cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm/
 make
 
 ### BRING UP THE ENVIRONMENT:
 # NOTE: The line below would replace the ceph install just below in cases that favor a large /home/ and small / partitions.
 # If this is your case, uncomment the line below and comment the second ceph install line.
 # helm install --name=ceph local/ceph --set images.daemon=quay.io/v1k0d3n/ceph-daemon:tag-build-master-jewel-ubuntu-16.04 --set network.public="$KUBE_POD_CIDR" --set storage.osd_directory=/home/ceph/osd,storage.var_directory=/home/ceph/var,storage.mon_directory=/home/ceph/mon --namespace=ceph
-helm install --name=ceph local/ceph --set images.daemon=quay.io/v1k0d3n/ceph-daemon:tag-build-master-jewel-ubuntu-16.04 --set network.public="$KUBE_POD_CIDR" --namespace=ceph
-helm install --name=bootstrap-ceph local/bootstrap --namespace=ceph
-helm install --name=bootstrap-openstack local/bootstrap --namespace=openstack
+#helm install --name=ceph local/ceph --set images.daemon=quay.io/v1k0d3n/ceph-daemon:tag-build-master-jewel-ubuntu-16.04 --set network.public="$KUBE_POD_CIDR" --namespace=ceph
+helm install --namespace=ceph local/ceph --name=ceph \
+  --set manifests_enabled.client_secrets=false \
+  --set network.public=$osd_public_network \
+  --set network.cluster=$osd_cluster_network
+helm install --namespace=openstack local/ceph --name=ceph-openstack-config \
+  --set manifests_enabled.storage_secrets=false \
+  --set manifests_enabled.deployment=false \
+  --set ceph.namespace=ceph \
+  --set network.public=$osd_public_network \
+  --set network.cluster=$osd_cluster_network
 # NOTE: The following lines create the claims in ceph for Glance (images) and cinder (volumes).
 echo -e -n "Waiting for all Ceph components to be in a running state..."
 while true; do
@@ -66,19 +75,21 @@ while true; do
   echo -n "."
   sleep 1
 done
-helm install --name=mariadb local/mariadb --set volume.size=$MARIADB_SIZE --namespace=openstack
-kubectl exec -n ceph -it ceph-mon-0 ceph osd pool create volumes 25
-kubectl exec -n ceph -it ceph-mon-0 ceph osd pool create images 15
+kubectl exec -n ceph ceph-mon-0 -- ceph osd pool create volumes 8
+kubectl exec -n ceph ceph-mon-0 -- ceph osd pool create images 8
+kubectl exec -n ceph ceph-mon-0 -- ceph osd pool create vms 8
+#helm install --name=mariadb local/mariadb --set volume.size=$MARIADB_SIZE --namespace=openstack
+helm install --name=mariadb local/mariadb --namespace=openstack
 helm install --name=rabbitmq local/rabbitmq --namespace=openstack
 helm install --name=rabbitmq-etcd local/etcd --namespace=openstack
 helm install --name=memcached local/memcached --namespace=openstack
-helm install --name=keystone local/keystone network.node_port_enable=true --namespace=openstack
+helm install --name=keystone local/keystone --set network.node_port_enable=true --namespace=openstack
 helm install --name=glance local/glance --namespace=openstack
 helm install --name=heat local/heat --namespace=openstack
 helm install --name=cinder local/cinder --namespace=openstack
 helm install --name=nova local/nova --namespace=openstack
 helm install --name=neutron local/neutron --namespace=openstack
-helm install --name=horizon local/horizon network.node_port_enable=true --namespace=openstack
+helm install --name=horizon local/horizon --set network.node_port_enable=true --namespace=openstack
 # Remove the exit statement if you wish any of the following Charts
 exit
 helm install --name=barbican local/barbican --namespace=openstack
