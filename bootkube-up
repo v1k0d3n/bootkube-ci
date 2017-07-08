@@ -199,7 +199,7 @@ fi
 
 ### REQUIRED FOR CEPH/OPTIONAL ALL OTHERS:
 echo_green "\nPhase VII: If requested, modifying the rendered assets to include a custom Hyperkube image:"
-sudo grep -rl quay.io/coreos/hyperkube:$KUBERNETES_VERSION'_coreos.0' $BOOTKUBE_DIR/.bootkube/ | sudo xargs sed -i "s|quay.io/coreos/hyperkube:"$KUBERNETES_VERSION"_coreos.0|quay.io/"$KUBE_IMAGE":"$KUBERNETES_VERSION"|g"
+sudo grep -rl quay.io/coreos/hyperkube:$KUBERNETES_VERSION'_coreos.*' $BOOTKUBE_DIR/.bootkube/ | sudo xargs sed -i "s|quay.io/coreos/hyperkube:"$KUBERNETES_VERSION"_coreos.*|quay.io/"$KUBE_IMAGE":"$KUBERNETES_VERSION"|g"
 
 ### DEPLOY KUBERNETES SELF-HOSTED CLUSTER:
 echo_green "\nPhase VIII: Preparing the environment for Kubernetes to run for the first time:"
