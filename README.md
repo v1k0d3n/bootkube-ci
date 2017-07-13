@@ -12,8 +12,10 @@ git clone https://github.com/v1k0d3n/bootkube-ci.git
 ## make any variable modifications via your CI platform of choice to both .bootkube-env and ./deploy-addons/openstack-helm-up.sh
 ## and deploy
 
-./bootkube-ci/bootkube-up.sh
-./bootkube-ci/deploy-addons/openstack-helm-up.sh
+cd bootkube-ci
+./bootkube-up
+cd deploy-addons
+./openstack-helm-up
 
 # done
 ```
