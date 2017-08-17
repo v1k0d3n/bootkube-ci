@@ -31,7 +31,7 @@ function echo_yellow {
 
 ## NEW INSTALLATIONS:
 echo_green "\nPhase I: Installing system prerequisites:"
-pkg="vim curl ethtool traceroute git build-essential lldpd socat"
+pkg="build-essential curl docker.io ethtool git lldpd socat traceroute vim"
 
 for pkg in $pkg; do
     if sudo dpkg --get-selections | grep -q "^$pkg[[:space:]]*install$" >/dev/null; then
@@ -41,11 +41,6 @@ for pkg in $pkg; do
         echo "Successfully installed $pkg"
     fi
 done
-
-if ! which docker > /dev/null; then
-   echo -e "Docker is not installed on this host. Installing latest version... \c"
-      curl -sSL https://get.docker.com/ | sh
-fi
 
 
 ### PREPARE THE ENVIRONMENT:
