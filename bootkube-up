@@ -192,12 +192,8 @@ else
    echo_green "\nSDN is set to $KUBE_SDN. No additional changes are required for $KUBE_SDN!"
 fi
 
-### REQUIRED FOR CEPH/OPTIONAL ALL OTHERS:
-echo_green "\nPhase VII: If requested, modifying the rendered assets to include a custom Hyperkube image:"
-sudo grep -rl quay.io/coreos/hyperkube:$KUBERNETES_VERSION'_coreos.*' $BOOTKUBE_DIR/.bootkube/ | sudo xargs sed -i "s|quay.io/coreos/hyperkube:"$KUBERNETES_VERSION"_coreos.*|quay.io/"$KUBE_IMAGE":"$KUBERNETES_VERSION"|g"
-
 ### DEPLOY KUBERNETES SELF-HOSTED CLUSTER:
-echo_green "\nPhase VIII: Preparing the environment for Kubernetes to run for the first time:"
+echo_green "\nPhase VII: Preparing the environment for Kubernetes to run for the first time:"
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet.service
 sudo systemctl enable kubelet.service
@@ -213,7 +209,7 @@ fi
 sudo chmod 644 ~/.kube/config
 
 
-echo_green "\nPhase IX: Running Bootkube start to bring up the temporary Kubernetes self-hosted control plane:"
+echo_green "\nPhase VII: Running Bootkube start to bring up the temporary Kubernetes self-hosted control plane:"
 nohup sudo bash -c 'bootkube start --asset-dir='$BOOTKUBE_DIR'/.bootkube' >$BOOTKUBE_DIR/bootkube-ci/log/bootkube-start.log 2>&1 &
 
 ### WAIT FOR KUBERNETES ENVIRONMENT TO COME UP:
@@ -235,13 +231,13 @@ sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig cluster-info
 sleep 10
 
 ### WAIT FOR KUBERNETES API TO COME UP CLEANLY, THEN APPLY FOLLOWING LABELS AND MANIFESTS:
-echo_green "\nPhase X: Cluster created, and now deploying requested SDN along with additional labels:"
+echo_green "\nPhase IX: Cluster created, and now deploying requested SDN along with additional labels:"
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/$KUBE_SDN-node=true --overwrite
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/master="" --overwrite
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN
 
 
-echo_green "\nPhase XI: Writing Kubernetes environment cluster-info logs:"
+echo_green "\nPhase X: Writing Kubernetes environment cluster-info logs:"
 ### WAIT FOR KUBERNETES ENVIRONMENT TO COME UP:
 echo -e -n "Waiting for all services to be in a running state..."
 while true; do
