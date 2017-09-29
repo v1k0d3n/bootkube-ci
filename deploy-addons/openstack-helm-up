@@ -96,8 +96,8 @@ sudo helm install --namespace=ceph $HELM_REPO/ceph --name=ceph \
   --set endpoints.object_store.namespace=ceph \
   --set endpoints.ceph_mon.namespace=ceph \
   --set ceph.rgw_keystone_auth=$CEPH_RGW_KEYSTONE_ENABLED \
-  --set network.public=$CEPH_PUBLIC_NETWORK \
-  --set network.cluster=$CEPH_PUBLIC_NETWORK \
+  --set network.public=$OSD_PUBLIC_NETWORK \
+  --set network.cluster=$OSD_PUBLIC_NETWORK \
   --set deployment.storage_secrets=true \
   --set deployment.ceph=true \
   --set deployment.rbd_provisioner=true \
@@ -167,6 +167,7 @@ while true; do
   sleep 1
 done
 exit
+
 ### BRING UP THE DATABASE:
 helm install --name=mariadb $HELM_REPO/mariadb --namespace=openstack
 
