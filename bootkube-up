@@ -28,8 +28,14 @@ function echo_yellow {
   echo -e "${YELLOW}$1"; tput sgr0
 }
 
+### Add IP Address of Hosts in /etc/hosts:
+HOST_IFACE=$(ip route | grep "^default" | head -1 | awk '{ print $5 }')
+LOCAL_IP=$(ip addr | awk "/inet/ && /${HOST_IFACE}/{sub(/\/.*$/,\"\",\$2); print \$2}")
+cat << EOF | sudo tee -a /etc/hosts
+${LOCAL_IP} $(hostname)
+EOF
 
-## NEW INSTALLATIONS:
+### NEW INSTALLATIONS:
 echo_green "\nPhase I: Installing system prerequisites:"
 pkg="build-essential curl docker.io ethtool git lldpd socat traceroute vim"
 
