@@ -95,7 +95,7 @@ helm repo add local "http://localhost:8879/charts"
 make
 
 ### BRING UP CEPH STORAGE:
-sudo helm install --namespace=ceph local/ceph --name=ceph \
+helm install --namespace=ceph local/ceph --name=ceph \
   --set endpoints.identity.namespace=openstack \
   --set endpoints.object_store.namespace=ceph \
   --set endpoints.ceph_mon.namespace=ceph \
@@ -110,7 +110,7 @@ sudo helm install --namespace=ceph local/ceph --name=ceph \
   --set bootstrap.enabled=true
 
 ### INSTALL CEPH KEYS:
-sudo helm install --namespace=openstack local/ceph --name=ceph-openstack-config \
+helm install --namespace=openstack local/ceph --name=ceph-openstack-config \
   --set endpoints.identity.namespace=openstack \
   --set endpoints.object_store.namespace=ceph \
   --set endpoints.ceph_mon.namespace=ceph \
