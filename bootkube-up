@@ -47,7 +47,9 @@ done
 source .bootkube_env
 echo "export KUBE_MASTER=$KUBE_IP" >> .bootkube_env
 echo_green "\nPhase II: Using the following variables during the deployment:"
-printf "BOOTKUBE_DIR: $BOOTKUBE_DIR
+printf "PROXY_ENABLED: $PROXY_ENABLED
+BOOTKUBE_DIR: $BOOTKUBE_DIR
+TMPDIR: $TMPDIR
 CNI_VERSION: $CNI_VERSION
 HELM_VERSION: $HELM_VERSION
 BOOTKUBE_VERSION: $BOOTKUBE_VERSION
@@ -55,6 +57,10 @@ KUBERNETES_VERSION: $KUBERNETES_VERSION
 KUBE_SDN: $KUBE_SDN
 KUBE_POD_CIDR: $KUBE_POD_CIDR
 KUBE_SVC_CIDR: $KUBE_SVC_CIDR
+ETCD_SVC_ADDR: $ETCD_SVC_ADDR
+ETCD_SVC_PORT: $ETCD_SVC_PORT
+ETCD_SVC_PEER: $ETCD_SVC_PEER
+HOST_SUB_CIDR: $HOST_SUB_CIDR
 KUBE_HW: $KUBE_HW
 KUBE_DNS_API: $KUBE_DNS_API
 NSERVER01: $NSERVER01
@@ -64,7 +70,8 @@ NSEARCH01: $NSEARCH01
 NSEARCH02: $NSEARCH02
 KUBE_ARCH: $KUBE_ARCH
 KUBE_IMAGE: $KUBE_IMAGE
-KUBE_IP: $KUBE_IP \n \n"
+KUBE_IP: $KUBE_IP
+KUBE_MASTER: $KUBE_MASTER \n \n"
 
 ### PREPARE: /etc/resolv.conf
 echo_green "\nPhase III: Preparing system DNS:"
@@ -109,6 +116,7 @@ ExecStart=/usr/local/bin/kubelet \\
     --cluster_dns='$NSERVER01','$NSERVER02','$NSERVER03' \\
     --cluster_domain=cluster.local \\
     --node-labels= \\
+    --node-ip='$KUBE_IP' \\
     --hostname-override='$KUBE_IP' \\
     --v=2
 Restart=on-failure
@@ -135,6 +143,7 @@ ExecStart=/usr/local/bin/kubelet \\
     --cluster_dns='$NSERVER01','$NSERVER02','$NSERVER03' \\
     --cluster_domain=cluster.local \\
     --node-labels= \\
+    --node-ip='$KUBE_IP' \\
     --hostname-override='$KUBE_IP' \\
     --v=2
 Restart=on-failure
@@ -208,8 +217,14 @@ if [[ ! -e ~/.kube/config ]]; then
 fi
 sudo chmod 644 ~/.kube/config
 
+### Enabling Kubernetes CronJob Support:
+echo_green "\nPhase VIII: Running conditional options to enable Kubernetes CronJobs. Below are enabled options for the API Server:"
+awk '/etcd-servers/{print;print "        - --runtime-config=batch/v2alpha1=true";next}1' $BOOTKUBE_DIR/.bootkube/manifests/kube-apiserver.yaml > $BOOTKUBE_DIR/.bootkube/manifests/kube-apiserver-custom.yaml
+rm -rf $BOOTKUBE_DIR/.bootkube/manifests/kube-apiserver.yaml
+cat /home/ubuntu/.bootkube/manifests/kube-apiserver-custom.yaml | grep "        - --"
 
-echo_green "\nPhase VII: Running Bootkube start to bring up the temporary Kubernetes self-hosted control plane:"
+
+echo_green "\nPhase IX: Running Bootkube start to bring up the temporary Kubernetes self-hosted control plane:"
 nohup sudo bash -c 'bootkube start --asset-dir='$BOOTKUBE_DIR'/.bootkube' >$BOOTKUBE_DIR/bootkube-ci/log/bootkube-start.log 2>&1 &
 
 ### WAIT FOR KUBERNETES ENVIRONMENT TO COME UP:
@@ -231,13 +246,13 @@ sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig cluster-info
 sleep 10
 
 ### WAIT FOR KUBERNETES API TO COME UP CLEANLY, THEN APPLY FOLLOWING LABELS AND MANIFESTS:
-echo_green "\nPhase IX: Cluster created, and now deploying requested SDN along with additional labels:"
+echo_green "\nPhase X: Cluster created, and now deploying requested SDN along with additional labels:"
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/$KUBE_SDN-node=true --overwrite
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/master="" --overwrite
-sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN
+sed "s?KUBE_POD_CIDR?${KUBE_POD_CIDR}?g; s?ETCD_SVC_ADDR?${ETCD_SVC_ADDR}?g; s?ETCD_SVC_PORT?${ETCD_SVC_PORT}?g; s?ETCD_SVC_PEER?${ETCD_SVC_PEER}?g" $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN/calico-v1.7.5.yaml  >  $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN/calico-bootkube-v1.7.5.yaml
+sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN/calico-bootkube-v1.7.5.yaml
 
-
-echo_green "\nPhase X: Writing Kubernetes environment cluster-info logs:"
+echo_green "\nPhase XI: Writing Kubernetes environment cluster-info logs:"
 ### WAIT FOR KUBERNETES ENVIRONMENT TO COME UP:
 echo -e -n "Waiting for all services to be in a running state..."
 while true; do

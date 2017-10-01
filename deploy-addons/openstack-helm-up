@@ -13,13 +13,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+### Declare colors to use during the running of this script:
+declare -r GREEN="\033[0;32m"
+declare -r RED="\033[0;31m"
+declare -r YELLOW="\033[0;33m"
+
+function echo_green {
+  echo -e "${GREEN}$1"; tput sgr0
+}
+function echo_red {
+  echo -e "${RED}$1"; tput sgr0
+}
+function echo_yellow {
+  echo -e "${YELLOW}$1"; tput sgr0
+}
+
 ### PREPARE THE ENVIRONMENT:
 source ../.bootkube_env
 export MARIADB_SIZE=15Gi
 export CEPH_RGW_KEYSTONE_ENABLED=true
 export OSH_BRANCH=master
-export OSD_CLUSTER_NETWORK=$KUBE_POD_CIDR
-export OSD_PUBLIC_NETWORK=$KUBE_POD_CIDR
+export OSD_CLUSTER_NETWORK=${HOST_SUB_CIDR}
+export OSD_PUBLIC_NETWORK=${HOST_SUB_CIDR}
+echo_green "\nAdding additional variables for an OpenStack-Helm deployment:"
+printf "MARIADB_SIZE: $MARIADB_SIZE
+CEPH_RGW_KEYSTONE_ENABLED: $CEPH_RGW_KEYSTONE_ENABLED
+OSH_BRANCH: $OSH_BRANCH
+OSD_CLUSTER_NETWORK: $OSD_CLUSTER_NETWORK
+OSD_PUBLIC_NETWORK: $OSD_PUBLIC_NETWORK \n \n"
 
 ### APPLY DEVELOPMENT RBAC POLICY:
 #kubectl update -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml --validate=false
@@ -74,7 +95,7 @@ helm repo add local "http://localhost:8879/charts"
 make
 
 ### BRING UP CEPH STORAGE:
-helm install --namespace=ceph local/ceph --name=ceph \
+sudo helm install --namespace=ceph local/ceph --name=ceph \
   --set endpoints.identity.namespace=openstack \
   --set endpoints.object_store.namespace=ceph \
   --set endpoints.ceph_mon.namespace=ceph \
@@ -89,7 +110,7 @@ helm install --namespace=ceph local/ceph --name=ceph \
   --set bootstrap.enabled=true
 
 ### INSTALL CEPH KEYS:
-helm install --namespace=openstack local/ceph --name=ceph-openstack-config \
+sudo helm install --namespace=openstack local/ceph --name=ceph-openstack-config \
   --set endpoints.identity.namespace=openstack \
   --set endpoints.object_store.namespace=ceph \
   --set endpoints.ceph_mon.namespace=ceph \
@@ -114,6 +135,9 @@ while true; do
   sleep 1
 done
 exit
+
+exit 0
+
 ### BRING UP THE DATABASE:
 helm install --name=mariadb local/mariadb --namespace=openstack
 
@@ -129,7 +153,6 @@ helm install --name=openvswitch local/openvswitch --namespace=openstack
 helm install --namespace=openstack --name=keystone ./keystone \
   --set pod.replicas.api=2
 
-### BRING UP OTHER CHARTS:
 helm install --name=glance local/glance --namespace=openstack
 helm install --name=heat local/heat --namespace=openstack
 helm install --name=cinder local/cinder --namespace=openstack
