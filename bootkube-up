@@ -100,6 +100,7 @@ if [ ! -e /usr/local/bin/hostess ]; then
 fi
 sudo hostess add $KUBE_DNS_API $KUBE_IP
 sudo hostess add kubernetes $KUBE_IP
+sudo hostess fix
 
 ### PREPARE: /etc/systemd/system/kubelet.service
 echo_green "\nPhase VI: Deploying the Kubelet systemd unit:"

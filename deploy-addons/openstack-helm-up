@@ -33,14 +33,14 @@ source ../.bootkube_env
 export MARIADB_SIZE=15Gi
 export CEPH_RGW_KEYSTONE_ENABLED=true
 export OSH_BRANCH=master
-export OSD_CLUSTER_NETWORK=${HOST_SUB_CIDR}
-export OSD_PUBLIC_NETWORK=${HOST_SUB_CIDR}
+export CEPH_CLUSTER_NETWORK=${HOST_SUB_CIDR}
+export CEPH_PUBLIC_NETWORK=${HOST_SUB_CIDR}
 echo_green "\nAdding additional variables for an OpenStack-Helm deployment:"
 printf "MARIADB_SIZE: $MARIADB_SIZE
 CEPH_RGW_KEYSTONE_ENABLED: $CEPH_RGW_KEYSTONE_ENABLED
 OSH_BRANCH: $OSH_BRANCH
-OSD_CLUSTER_NETWORK: $OSD_CLUSTER_NETWORK
-OSD_PUBLIC_NETWORK: $OSD_PUBLIC_NETWORK \n \n"
+CEPH_CLUSTER_NETWORK: $CEPH_CLUSTER_NETWORK
+CEPH_PUBLIC_NETWORK: $CEPH_PUBLIC_NETWORK \n \n"
 
 ### APPLY DEVELOPMENT RBAC POLICY:
 #kubectl update -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml --validate=false
