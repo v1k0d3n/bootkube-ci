@@ -1,0 +1,9 @@
+#!/bin/bash
+source ../.bootkube_env
+export MARIADB_SIZE=15Gi
+export CEPH_RGW_KEYSTONE_ENABLED=true
+export OSH_BRANCH=master
+export HELM_REPO=local
+export CEPH_CLUSTER_NETWORK=${HOST_SUB_CIDR}
+export CEPH_PUBLIC_NETWORK=${HOST_SUB_CIDR}
+export GLANCE_BACKEND=radosgw

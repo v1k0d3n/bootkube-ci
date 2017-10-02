@@ -29,18 +29,14 @@ function echo_yellow {
 }
 
 ### PREPARE THE ENVIRONMENT:
-source ../.bootkube_env
-export MARIADB_SIZE=15Gi
-export CEPH_RGW_KEYSTONE_ENABLED=true
-export OSH_BRANCH=master
-export CEPH_CLUSTER_NETWORK=${HOST_SUB_CIDR}
-export CEPH_PUBLIC_NETWORK=${HOST_SUB_CIDR}
+source ./.osh_env
 echo_green "\nAdding additional variables for an OpenStack-Helm deployment:"
 printf "MARIADB_SIZE: $MARIADB_SIZE
 CEPH_RGW_KEYSTONE_ENABLED: $CEPH_RGW_KEYSTONE_ENABLED
 OSH_BRANCH: $OSH_BRANCH
 CEPH_CLUSTER_NETWORK: $CEPH_CLUSTER_NETWORK
-CEPH_PUBLIC_NETWORK: $CEPH_PUBLIC_NETWORK \n \n"
+CEPH_PUBLIC_NETWORK: $CEPH_PUBLIC_NETWORK
+GLANCE_BACKEND: $GLANCE_BACKEND \n \n"
 
 ### APPLY DEVELOPMENT RBAC POLICY:
 #kubectl update -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml --validate=false
@@ -90,12 +86,12 @@ echo ""
 ### START HELM LOCAL REPO:
 helm serve &
 helm repo remove stable
-helm repo add local "http://localhost:8879/charts"
+helm repo add $HELM_REPO "http://localhost:8879/charts"
 #sudo mkdir -p /var/lib/nova/instances
 make
 
 ### BRING UP CEPH STORAGE:
-helm install --namespace=ceph local/ceph --name=ceph \
+sudo helm install --namespace=ceph $HELM_REPO/ceph --name=ceph \
   --set endpoints.identity.namespace=openstack \
   --set endpoints.object_store.namespace=ceph \
   --set endpoints.ceph_mon.namespace=ceph \
@@ -110,7 +106,7 @@ helm install --namespace=ceph local/ceph --name=ceph \
   --set bootstrap.enabled=true
 
 ### INSTALL CEPH KEYS:
-helm install --namespace=openstack local/ceph --name=ceph-openstack-config \
+sudo helm install --namespace=openstack $HELM_REPO/ceph --name=ceph-openstack-config \
   --set endpoints.identity.namespace=openstack \
   --set endpoints.object_store.namespace=ceph \
   --set endpoints.ceph_mon.namespace=ceph \
@@ -135,30 +131,66 @@ while true; do
   sleep 1
 done
 exit
-
-exit 0
-
 ### BRING UP THE DATABASE:
-helm install --name=mariadb local/mariadb --namespace=openstack
+helm install --name=mariadb $HELM_REPO/mariadb --namespace=openstack
 
 ### BRING UP THE INFRASTRUCTURE COMPONENTS:
-helm install --name=memcached local/memcached --namespace=openstack
-helm install --name=etcd-rabbitmq local/etcd --namespace=openstack
-helm install --name=rabbitmq local/rabbitmq --namespace=openstack
-helm install --name=ingress local/ingress --namespace=openstack
-helm install --name=libvirt local/libvirt --namespace=openstack
-helm install --name=openvswitch local/openvswitch --namespace=openstack
+helm install --name=memcached $HELM_REPO/memcached --namespace=openstack
+helm install --name=etcd-rabbitmq $HELM_REPO/etcd --namespace=openstack
+helm install --name=rabbitmq $HELM_REPO/rabbitmq --namespace=openstack
+helm install --name=ingress $HELM_REPO/ingress --namespace=openstack
+helm install --name=libvirt $HELM_REPO/libvirt --namespace=openstack
+helm install --name=openvswitch $HELM_REPO/openvswitch --namespace=openstack
 
 ### BRING UP KEYSTONE:
-helm install --namespace=openstack --name=keystone ./keystone \
+helm install --namespace=openstack --name=keystone $HELM_REPO/keystone \
   --set pod.replicas.api=2
 
-helm install --name=glance local/glance --namespace=openstack
-helm install --name=heat local/heat --namespace=openstack
-helm install --name=cinder local/cinder --namespace=openstack
-helm install --name=nova local/nova --namespace=openstack
-helm install --name=neutron local/neutron --namespace=openstack
-helm install --name=horizon local/horizon --set network.node_port_enable=true --namespace=openstack
+### BRING UP KEYSTONE ENDPOINTS FOR CEPH:
+helm install --namespace=openstack $HELM_REPO/ceph --name=radosgw-openstack \
+  --set endpoints.identity.namespace=openstack \
+  --set endpoints.object_store.namespace=ceph \
+  --set endpoints.ceph_mon.namespace=ceph \
+  --set ceph.rgw_keystone_auth=${CEPH_RGW_KEYSTONE_ENABLED} \
+  --set network.public=$CEPH_PUBLIC_NETWORK \
+  --set network.cluster=$CEPH_PUBLIC_NETWORK \
+  --set deployment.storage_secrets=false \
+  --set deployment.ceph=false \
+  --set deployment.rbd_provisioner=false \
+  --set deployment.client_secrets=false \
+  --set deployment.rgw_keystone_user_and_endpoints=true
+
+### BRING UP HORIZON INTERFACE:
+helm install --namespace=openstack --name=horizon $HELM_REPO/horizon \
+  --set network.enable_node_port=true
+
+### BRING UP GLANCE:
+helm install --namespace=openstack --name=glance $HELM_REPO/glance \
+  --set pod.replicas.api=2 \
+  --set pod.replicas.registry=2
+  --set storage=$GLANCE_BACKEND
+
+### BRING UP HEAT ORCHESTRATION FOR OPENSTACK:
+helm install --namespace=openstack --name=heat $HELM_REPO/heat
+
+### BRING UP NEUTRON:
+helm install --namespace=openstack --name=neutron $HELM_REPO/neutron \
+  --set pod.replicas.server=2
+
+### BRING UP NOVA:
+helm install --namespace=openstack --name=nova $HELM_REPO/nova \
+  --set pod.replicas.api_metadata=2 \
+  --set pod.replicas.osapi=2 \
+  --set pod.replicas.conductor=2 \
+  --set pod.replicas.consoleauth=2 \
+  --set pod.replicas.scheduler=2 \
+  --set pod.replicas.novncproxy=2
+
+
+### BRING UP CINDER:
+helm install --namespace=openstack --name=cinder $HELM_REPO/cinder \
+  --set pod.replicas.api=2
+
 # Remove the exit statement if you wish any of the following Charts
 Exit
 helm install --name=barbican local/barbican --namespace=openstack
