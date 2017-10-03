@@ -1,0 +1,10 @@
+#!/bin/bash
+source ../.bootkube_env
+export HOST_SUB_CIDR='192.168.1.0/24'         ### HOST SUBNET CIDR            ###
+export OSH_BRANCH=master                      ### OSH BRANCH                  ###
+export HELM_REPO=local                        ### HELM REPO TO UPLOAD CHARTS  ###
+export CEPH_CLUSTER_NETWORK=${HOST_SUB_CIDR}  ### CEPH CLUSTER NETWORK        ###
+export CEPH_PUBLIC_NETWORK=${HOST_SUB_CIDR}   ### CEPH PUBLIC NETWORK         ###
+export CEPH_RGW_KEYSTONE_ENABLED=true         ### CEPH RGW ENABLED KEYSTONE   ###
+export MARIADB_SIZE=15Gi                      ### MARIADB PVC SIZE            ###
+export GLANCE_BACKEND=radosgw                 ### GLANCE BACKEND OPTIONS      ###
