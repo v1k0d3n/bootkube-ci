@@ -12,6 +12,7 @@ export KUBE_SVC_CIDR='10.96.0.0/16'           ### SDN SERVICE CIDR RANGE       #
 export ETCD_SVC_ADDR='10.96.232.136'          ### ETCD CLUSTER IP ADDRESS      ###
 export ETCD_SVC_PORT='6666'                   ### ETCD SERVICE PORT            ###
 export ETCD_SVC_PEER='6667'                   ### ETCD SERVICE PEER PORT       ###
+export KUBE_SVC_PORT='8443'                   ### PORT FOR KUBE API ENDPOINT   ###
 export KUBE_HW='ens3'                         ### MODIFY FOR IFCONFIG HW INT   ###
 export KUBE_DNS_API='kubernetes.default'      ### DNS API ENDPOINT             ###
 export NSERVER01='10.96.0.10'                 ### NEEDS TO BE CLUSTER DNS IP   ###
