@@ -200,7 +200,7 @@ echo_green "\nComplete!"
 
 ### RENDER ASSETS:
 echo_green "\nPhase VI: Running Bootkube to render the Kubernetes assets:"
-bootkube render --asset-dir=$BOOTKUBE_DIR/.bootkube --experimental-self-hosted-etcd --etcd-servers=http://10.3.0.15:12379 --api-servers=https://$KUBE_DNS_API:443 --pod-cidr=$KUBE_POD_CIDR --service-cidr=$KUBE_SVC_CIDR
+bootkube render --asset-dir=$BOOTKUBE_DIR/.bootkube --experimental-self-hosted-etcd --etcd-servers=http://10.3.0.15:12379 --api-servers=https://$KUBE_DNS_API:$KUBE_SVC_PORT --pod-cidr=$KUBE_POD_CIDR --service-cidr=$KUBE_SVC_CIDR
 sudo rm -rf $BOOTKUBE_DIR/.bootkube/manifests/kube-flannel*
 if [ $KUBE_SDN = "kube-router" ]; then
    echo_yellow "\nSDN variable is set to kube-router. Proceeding to remove kube-proxy manifests for Bootkube!" && sudo rm -rf $BOOTKUBE_DIR/.bootkube/manifests/kube-proxy.yaml
@@ -256,7 +256,8 @@ sleep 10
 echo_green "\nPhase X: Cluster created, and now deploying requested SDN along with additional labels:"
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/$KUBE_SDN-node=true --overwrite
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig label node --all node-role.kubernetes.io/master="" --overwrite
-sed "s?KUBE_POD_CIDR?${KUBE_POD_CIDR}?g; s?ETCD_SVC_ADDR?${ETCD_SVC_ADDR}?g; s?ETCD_SVC_PORT?${ETCD_SVC_PORT}?g; s?ETCD_SVC_PEER?${ETCD_SVC_PEER}?g" $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN/calico-v1.7.5.yaml  >  $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN/calico-bootkube-v1.7.5.yaml
+sed "s?KUBE_POD_CIDR?${KUBE_POD_CIDR}?g; s?ETCD_SVC_ADDR?${ETCD_SVC_ADDR}?g; s?ETCD_SVC_PORT?${ETCD_SVC_PORT}?g; s?ETCD_SVC_PEER?${ETCD_SVC_PEER}?g; s?KUBE_SVC_PORT?${KUBE_SVC_PORT}?g" $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN/calico-v1.7.5.yaml  >  $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN/calico-bootkube-v1.7.5.yaml
+
 sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig apply -f $BOOTKUBE_DIR/bootkube-ci/deploy-sdn/$KUBE_SDN/calico-bootkube-v1.7.5.yaml
 
 echo_green "\nPhase XI: Writing Kubernetes environment cluster-info logs:"
