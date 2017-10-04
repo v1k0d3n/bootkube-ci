@@ -58,13 +58,13 @@ fi
 git clone https://github.com/openstack/openstack-helm.git $BOOTKUBE_DIR/bootkube-ci/openstack-helm && cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm && git checkout $OSH_BRANCH
 
 ### LABEL THE NODES:
-kubectl label nodes openstack-control-plane=enabled --all
-kubectl label nodes ceph-mon=enabled --all
-kubectl label nodes ceph-osd=enabled --all
-kubectl label nodes ceph-mds=enabled --all
-kubectl label nodes ceph-rgw=enabled --all
-kubectl label nodes openvswitch=enabled --all
-kubectl label nodes openstack-compute-node=enabled --all
+kubectl label nodes openstack-control-plane=enabled --all --overwrite=true
+kubectl label nodes ceph-mon=enabled --all --overwrite=true
+kubectl label nodes ceph-osd=enabled --all --overwrite=true
+kubectl label nodes ceph-mds=enabled --all --overwrite=true
+kubectl label nodes ceph-rgw=enabled --all --overwrite=true
+kubectl label nodes openvswitch=enabled --all --overwrite=true
+kubectl label nodes openstack-compute-node=enabled --all --overwrite=true
 
 ### PREPARE HELM:
 helm init
@@ -88,6 +88,7 @@ helm serve &
 helm repo remove stable
 helm repo add $HELM_REPO "http://localhost:8879/charts"
 #sudo mkdir -p /var/lib/nova/instances
+pwd
 make
 
 ### BRING UP CEPH STORAGE:
@@ -96,8 +97,8 @@ sudo helm install --namespace=ceph $HELM_REPO/ceph --name=ceph \
   --set endpoints.object_store.namespace=ceph \
   --set endpoints.ceph_mon.namespace=ceph \
   --set ceph.rgw_keystone_auth=$CEPH_RGW_KEYSTONE_ENABLED \
-  --set network.public=$OSD_PUBLIC_NETWORK \
-  --set network.cluster=$OSD_PUBLIC_NETWORK \
+  --set network.public=$CEPH_PUBLIC_NETWORK \
+  --set network.cluster=$CEPH_CLUSTER_NETWORK \
   --set deployment.storage_secrets=true \
   --set deployment.ceph=true \
   --set deployment.rbd_provisioner=true \
@@ -148,7 +149,7 @@ sudo helm install --namespace=openstack $HELM_REPO/ceph --name=ceph-openstack-co
   --set endpoints.ceph_mon.namespace=ceph \
   --set ceph.rgw_keystone_auth=$CEPH_RGW_KEYSTONE_ENABLED \
   --set network.public=$CEPH_PUBLIC_NETWORK \
-  --set network.cluster=$CEPH_PUBLIC_NETWORK \
+  --set network.cluster=$CEPH_CLUSTER_NETWORK \
   --set deployment.storage_secrets=false \
   --set deployment.ceph=false \
   --set deployment.rbd_provisioner=false \
