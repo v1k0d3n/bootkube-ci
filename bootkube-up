@@ -228,7 +228,7 @@ sudo chmod 644 ~/.kube/config
 echo_green "\nPhase VIII: Running conditional options to enable Kubernetes CronJobs. Below are enabled options for the API Server:"
 awk '/etcd-servers/{print;print "        - --runtime-config=batch/v2alpha1=true";next}1' $BOOTKUBE_DIR/.bootkube/manifests/kube-apiserver.yaml > $BOOTKUBE_DIR/.bootkube/manifests/kube-apiserver-custom.yaml
 rm -rf $BOOTKUBE_DIR/.bootkube/manifests/kube-apiserver.yaml
-cat /home/ubuntu/.bootkube/manifests/kube-apiserver-custom.yaml | grep "        - --"
+cat $BOOTKUBE_DIR/.bootkube/manifests/kube-apiserver-custom.yaml | grep "        - --"
 
 
 echo_green "\nPhase IX: Running Bootkube start to bring up the temporary Kubernetes self-hosted control plane:"
