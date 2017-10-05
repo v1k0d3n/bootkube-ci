@@ -105,6 +105,42 @@ sudo helm install --namespace=ceph $HELM_REPO/ceph --name=ceph \
   --set deployment.rgw_keystone_user_and_endpoints=false \
   --set bootstrap.enabled=true
 
+### RUN VARIOUS CEPH CHECKS BEFORE CONTINUING:
+echo -e -n "Waiting for all Ceph Monitors to be in a running state..."
+while true; do
+  running_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n ceph --no-headers 2>/dev/null | grep "1/1" | grep "ceph-mon" | wc -l)
+  ### Expect all components to be out of a "ContainerCreating" state before collecting log data (this includes CrashLoopBackOff states):
+  if [ "$running_count" -ge 2 ]; then
+    break
+  fi
+  echo -n "."
+  sleep 1
+done
+
+
+echo -e -n "Waiting for all Ceph OSDs to be in a running state..."
+while true; do
+  running_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n ceph --no-headers 2>/dev/null | grep "1/1" | grep "ceph-osd" | wc -l)
+  ### Expect all components to be out of a "ContainerCreating" state before collecting log data (this includes CrashLoopBackOff states):
+  if [ "$running_count" -ge 1 ]; then
+    break
+  fi
+  echo -n "."
+  sleep 1
+done
+
+
+echo -e -n "Waiting for all Ceph RADOS Gateway to be in a running state..."
+while true; do
+  running_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n ceph --no-headers 2>/dev/null | grep "1/1" | grep "ceph-rgw" | wc -l)
+  ### Expect all components to be out of a "ContainerCreating" state before collecting log data (this includes CrashLoopBackOff states):
+  if [ "$running_count" -ge 1 ]; then
+    break
+  fi
+  echo -n "."
+  sleep 1
+done
+
 ### INSTALL CEPH KEYS:
 sudo helm install --namespace=openstack $HELM_REPO/ceph --name=ceph-openstack-config \
   --set endpoints.identity.namespace=openstack \
