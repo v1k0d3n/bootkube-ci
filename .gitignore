@@ -1,1 +1,4 @@
 .vagrant
+log/
+backups/
+deploy-sdn/calico/calico*bootkube*

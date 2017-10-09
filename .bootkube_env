@@ -7,6 +7,7 @@ export HELM_VERSION=v2.6.1                    ### HELM VERSION                 #
 export BOOTKUBE_VERSION=v0.6.2                ### BOOTKUBE VERSION             ###
 export KUBERNETES_VERSION=v1.7.5              ### KUBERNETES VERSION           ###
 export KUBE_SDN='calico'                      ### SDN SELECTION                ###
+export KUBE_SDN_VERSION=2.6.1                 ### SDN VERSION (CALICO ONLY)    ###
 export KUBE_POD_CIDR='10.25.0.0/16'           ### SDN POD CIDR RANGE           ###
 export KUBE_SVC_CIDR='10.96.0.0/16'           ### SDN SERVICE CIDR RANGE       ###
 export ETCD_SVC_ADDR='10.96.232.136'          ### ETCD CLUSTER IP ADDRESS      ###
