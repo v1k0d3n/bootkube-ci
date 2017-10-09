@@ -84,7 +84,7 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
           command: ["/bin/sh","-c"]
-          args: ["/usr/local/bin/etcd --name=calico --data-dir=/var/etcd/calico-data --advertise-client-urls=http://$CALICO_ETCD_IP:ETCD_SVC_PORT --listen-client-urls=http://0.0.0.0:ETCD_SVC_PORT --listen-peer-urls=http://0.0.0.0:6667"]
+          args: ["/usr/local/bin/etcd --name=calico --data-dir=/var/etcd/calico-data --advertise-client-urls=http://$CALICO_ETCD_IP:ETCD_SVC_PORT --listen-client-urls=http://0.0.0.0:ETCD_SVC_PORT --listen-peer-urls=http://0.0.0.0:ETCD_SVC_PEER"]
           volumeMounts:
             - name: var-etcd
               mountPath: /var/etcd
@@ -112,7 +112,7 @@ spec:
   # on DNS to get access to etcd.
   clusterIP: ETCD_SVC_ADDR
   ports:
-    - port: 6666
+    - port: ETCD_SVC_PORT
 
 ---
 
@@ -311,7 +311,7 @@ spec:
             # The location of the Kubernetes API.  Use the default Kubernetes
             # service for API access.
             - name: K8S_API
-              value: "https://kubernetes.default:443"
+              value: "https://kubernetes.default:KUBE_SVC_PORT"
             # Since we're running in the host namespace and might not have KubeDNS
             # access, configure the container's /etc/hosts to resolve
             # kubernetes.default to the correct service clusterIP.
