@@ -20,34 +20,42 @@ cd deploy-addons
 # done
 ```
 
-## Creating Client Certificates
-
-Currently, this project uses the kubeconfig (user: kubelet) for communicating with the cluster. In a more production environment, you will want to consider creating authenticated client certificates to communicate with the cluster. To do this, as an example, perform the following additional tasks (we will make this default behavior soon):
+## Kubernetes Config File
+By default, the Bootkube generated Kubernetes configuration will not work with Armada, because the config is not technically valid (Tiller will return an error message). This is because the certificate and key data is `REDACTED`, and because there is no default context configured. In order to create a valid `/home/${USER}/.kube/config` file (for use with [Armada](https://github.com/att-comdev/armada)), you will need to perform the following manual actions:
 
 ```
-## Change some permissions and move the current kubeconfig.
-sudo chown -R ubuntu ~/.kube
-mv ~/.kube/config ~/.kube/backup_config
+### Move Old Kubernetes Config:
+source ${BOOTKUBE_DIR}/.bootkube.env
+sudo mv ${HOME}/.kube/config ${HOME}/
 
-## Create a temp directory for your user certs, and generate them against the bootkube generated CA.
-mkdir /home/ubuntu/.kube_certs
-openssl x509 -req -in /home/ubuntu/.kube_certs/admin.csr \
-  -CA /home/ubuntu/.bootkube/tls/ca.crt \
-  -CAkey /home/ubuntu/.bootkube/tls/ca.key \
-  -CAcreateserial -out /home/ubuntu/.kube_certs/admin.pem -days 365
+### Create Valid Kubernetes User Config:
+sudo kubectl config set-cluster local --server=https://${KUBE_MASTER}:${KUBE_SVC_PORT} --certificate-authority=${BOOTKUBE_DIR}/.bootkube/tls/ca.crt
+sudo kubectl config set-context default --cluster=local --user=kubelet
+sudo kubectl config use-context default
+sudo kubectl config set-credentials kubelet --client-certificate=${BOOTKUBE_DIR}/.bootkube/tls/kubelet.crt  --client-key=${BOOTKUBE_DIR}/.bootkube/tls/kubelet.key
+sudo chown -R ${USER} ${HOME}/.kube
+```
 
-## Next, create a ~/.kube/config.
-sudo kubectl config --kubeconfig=/etc/kubernetes/kubeconfig \
-    set-cluster default-cluster --server=https://192.168.4.51:8443 \
-    --certificate-authority=/home/ubuntu/.bootkube/ca.crt
+Now you should be able to use your cluster with Armada.
 
-kubectl config set-credentials ubuntu \
-    --certificate-authority=/home/ubuntu/.bootkube/ca.crt \
-    --client-key=/home/ubuntu/.kube_certs/admin-key.pem \
-    --client-certificate=/home/ubuntu/.kube_certs/admin.pem   
+## Creating Client Certificates
 
-kubectl config set-context default-system --cluster=default-cluster --user=ubuntu
-kubectl config use-context default-system
+Currently, this project uses the `kubelet` user for communicating with the cluster. In production environments, this is unacceptable. You will want to consider creating authenticated client certificates so your users can communicate with the cluster with valid certificates and [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) policies. To create client certificates, perform the following additional tasks (we will make this default behavior soon):
+
+```
+### EXPORT ORG NAME/EXPIRATION IN DAYS:
+export ORGANIZATION=charter
+export CERT_EXPIRATION=730
+
+### DIRECTORY PREPARATION:
+mkdir -f ~/.kube_certs
+mv ~/.kube/config ~/.kube/backup_kubeconfig
+rm -rf ${HOME}/.kube_certs/*
+
+### CERTIFICATE CREATION FOR END USERS:
+openssl genrsa -out ~/.kube_certs/${USER}.key 2048
+openssl req -new -key ~/.kube_certs/${USER}.key -out ~/.kube_certs/${USER}.csr -subj "/CN=${USER}/O=${ORGANIZATION}"
+openssl x509 -req -in ~/.kube_certs/${USER}.csr -CA ~/.bootkube/tls/ca.crt -CAkey ~/.bootkube/tls/ca.key -CAcreateserial -out ~/.kube_certs/${USER}.crt -days ${CERT_EXPIRATION}
 ```
 
 ## Default Behavior
