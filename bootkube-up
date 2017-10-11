@@ -116,23 +116,23 @@ ExecStartPre=/bin/mkdir -p /opt/cni/bin
 ExecStartPre=/bin/mkdir -p /etc/kubernetes/checkpoint-secrets
 ExecStartPre=/bin/mkdir -p /etc/kubernetes/inactive-manifests
 ExecStartPre=/bin/mkdir -p /var/lib/cni
-ExecStart=/usr/local/bin/kubelet \
-  --allow-privileged \
-  --cloud-provider= \
-  --cluster_domain=cluster.local \
-  --cluster_dns='$NSERVER01','$NSERVER02','$NSERVER03' \
-  --cni-conf-dir=/etc/cni/net.d \
-  --exit-on-lock-contention \
-  --hostname-override='$KUBE_IP' \
-  --kubeconfig=/etc/kubernetes/kubeconfig \
-  --lock-file=/var/run/lock/kubelet.lock \
-  --minimum-container-ttl-duration=3m0s \
-  --node-labels=node-role.kubernetes.io/master \
-  --node-ip='$KUBE_IP' \
-  --network-plugin=cni \
-  --pod-manifest-path=/etc/kubernetes/manifests \
-  --register-with-taints=node-role.kubernetes.io/master=:NoSchedule \
-  --require-kubeconfig \
+ExecStart=/usr/local/bin/kubelet \\
+  --allow-privileged \\
+  --cloud-provider= \\
+  --cluster_domain=cluster.local \\
+  --cluster_dns='$NSERVER01','$NSERVER02','$NSERVER03' \\
+  --cni-conf-dir=/etc/cni/net.d \\
+  --exit-on-lock-contention \\
+  --hostname-override='$KUBE_IP' \\
+  --kubeconfig=/etc/kubernetes/kubeconfig \\
+  --lock-file=/var/run/lock/kubelet.lock \\
+  --minimum-container-ttl-duration=3m0s \\
+  --node-labels=node-role.kubernetes.io/master \\
+  --node-ip='$KUBE_IP' \\
+  --network-plugin=cni \\
+  --pod-manifest-path=/etc/kubernetes/manifests \\
+  --register-with-taints=node-role.kubernetes.io/master=:NoSchedule \\
+  --require-kubeconfig \\
   --v=8
 Restart=always
 RestartSec=5
