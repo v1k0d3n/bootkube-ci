@@ -28,118 +28,111 @@ function echo_yellow {
   echo -e "${YELLOW}$1"; tput sgr0
 }
 
+ls -asl
+
 source .bootkube_env
 
-## NEW INSTALLATIONS:
-echo_green "\nPhase I: Installing system prerequisites:"
-pkg="vim curl docker.io ethtool traceroute git build-essential lldpd socat ceph-common"
+### Add IP Address of Hosts in /etc/hosts:
+HOST_IFACE=$(ip route | grep "^default" | head -1 | awk '{ print $5 }')
+LOCAL_IP=$(ip addr | awk "/inet/ && /${HOST_IFACE}/{sub(/\/.*$/,\"\",\$2); print \$2}")
+cat << EOF | sudo tee -a /etc/hosts
+${LOCAL_IP} $(hostname)
+EOF
 
-for pkg in $pkg; do
-    if sudo dpkg --get-selections | grep -q "^$pkg[[:space:]]*install$" >/dev/null; then
-        echo -e "$pkg is already installed"
+### NEW INSTALLATIONS:
+echo_green "\nPhase I: Installing system prerequisites:"
+pkg="build-essential curl docker.io ethtool git lldpd socat traceroute vim"
+
+for pkg in ${pkg}; do
+    if sudo dpkg --get-selections | grep -q "^${pkg}[[:space:]]*install$" >/dev/null; then
+        echo -e "${pkg} is already installed"
     else
-        sudo apt-get update && sudo apt-get -qq install $pkg
-        echo "Successfully installed $pkg"
+        sudo apt-get update && sudo apt-get -qq install ${pkg}
+        echo "Successfully installed ${pkg}"
     fi
 done
 
-mkdir -p $BOOTKUBE_DIR/bootkube-ci/
 
 ### PREPARE: /etc/resolv.conf
 echo_green "\nPhase III: Preparing system DNS:"
-sudo cp /etc/resolv.conf $BOOTKUBE_DIR/bootkube-ci/backups/
+sudo cp /etc/resolv.conf ${BOOTKUBE_DIR}/bootkube-ci/backups/
 
 ### PREPARE: /etc/resolv.conf
 sudo -E bash -c "cat <<EOF > /etc/resolvconf/resolv.conf.d/head
-nameserver $NSERVER01
+nameserver ${NSERVER01}
 EOF"
 sudo -E bash -c "cat <<EOF > /etc/resolvconf/resolv.conf.d/base
-search kubernetes $KUBE_DNS_API $NSEARCH01 $NSEARCH02
+search kubernetes ${KUBE_DNS_API} ${NSEARCH01} ${NSEARCH02}
 EOF"
 sudo resolvconf -u
-echo_yellow "\e[3mBootkube-CI Users: '/etc/resolv.conf is not a symbolic link' warning above is OK!\e[0m"
+# echo_yellow "\e[3mBootkube-CI Users: '/etc/resolv.conf is not a symbolic link' warning above is OK!\e[0m"
 
 ### PREPARE: /etc/hosts with idempotency (hostess):
+mkdir -p $TMPDIR
 ### DOWNLOAD: bootkube
 if [ ! -e /usr/local/bin/hostess ]; then
-    sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_amd64
+    sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_${KUBE_ARCH}
     sudo chmod +x /usr/local/bin/hostess
 fi
-sudo hostess add $KUBE_DNS_API $KUBE_MASTER
-sudo hostess add kubernetes $KUBE_MASTER
+sudo hostess add ${KUBE_DNS_API} ${KUBE_IP}
+sudo hostess add kubernetes ${KUBE_IP}
+sudo hostess fix
 
 ### PREPARE: /etc/systemd/system/kubelet.service
 echo_green "\nPhase VI: Deploying the Kubelet systemd unit:"
-printf "Kublet deployed to host:\n"
-echo_red "[Unit]
+printf "Kubelet deployed to host:\n"
+echo "[Unit]
 Description=Kubernetes Kubelet
 Documentation=https://kubernetes.io/docs/admin/kubelet/
 [Service]
+EnvironmentFile=/etc/environment
+ExecStartPre=/bin/mkdir -p /etc/kubernetes
 ExecStartPre=/bin/mkdir -p /etc/kubernetes/manifests
+ExecStartPre=/bin/mkdir -p /opt/cni/bin
+ExecStartPre=/bin/mkdir -p /etc/kubernetes/checkpoint-secrets
+ExecStartPre=/bin/mkdir -p /etc/kubernetes/inactive-manifests
+ExecStartPre=/bin/mkdir -p /var/lib/cni
 ExecStart=/usr/local/bin/kubelet \\
-    --kubeconfig=/etc/kubernetes/kubeconfig \\
-    --require-kubeconfig \\
-    --cni-conf-dir=/etc/cni/net.d \\
-    --cni-bin-dir=/opt/cni/bin \\
-    --network-plugin=cni \\
-    --lock-file=/var/run/lock/kubelet.lock \\
-    --exit-on-lock-contention \\
-    --pod-manifest-path=/etc/kubernetes/manifests \\
-    --allow-privileged \\
-    --cluster_dns='$NSERVER01','$NSERVER02','$NSERVER03' \\
-    --cluster_domain=cluster.local \\
-    --node-labels= \\
-    --hostname-override='$KUBE_IP' \\
-    --v=2
-Restart=on-failure
+  --allow-privileged \\
+  --cloud-provider= \\
+  --cluster_domain=cluster.local \\
+  --cluster_dns='${NSERVER01}','${NSERVER02}','${NSERVER03}' \\
+  --cni-conf-dir=/etc/cni/net.d \\
+  --exit-on-lock-contention \\
+  --hostname-override='${KUBE_IP}' \\
+  --kubeconfig=/etc/kubernetes/kubeconfig \\
+  --lock-file=/var/run/lock/kubelet.lock \\
+  --minimum-container-ttl-duration=3m0s \\
+  --node-labels=node-role.kubernetes.io/master \\
+  --node-ip='${KUBE_IP}' \\
+  --network-plugin=cni \\
+  --pod-manifest-path=/etc/kubernetes/manifests \\
+  --register-with-taints=node-role.kubernetes.io/master=:NoSchedule \\
+  --require-kubeconfig \\
+  --v=8
+Restart=always
 RestartSec=5
 [Install]
-WantedBy=multi-user.target\n"
-
-sudo -E bash -c 'cat <<EOF > /etc/systemd/system/kubelet.service
-[Unit]
-Description=Kubernetes Kubelet
-Documentation=https://kubernetes.io/docs/admin/kubelet/
-[Service]
-ExecStartPre=/bin/mkdir -p /etc/kubernetes/manifests
-ExecStart=/usr/local/bin/kubelet \\
-    --kubeconfig=/etc/kubernetes/kubeconfig \\
-    --require-kubeconfig \\
-    --cni-conf-dir=/etc/cni/net.d \\
-    --cni-bin-dir=/opt/cni/bin \\
-    --network-plugin=cni \\
-    --lock-file=/var/run/lock/kubelet.lock \\
-    --exit-on-lock-contention \\
-    --pod-manifest-path=/etc/kubernetes/manifests \\
-    --allow-privileged \\
-    --cluster_dns='$NSERVER01','$NSERVER02','$NSERVER03' \\
-    --cluster_domain=cluster.local \\
-    --node-labels= \\
-    --hostname-override='$KUBE_IP' \\
-    --v=2
-Restart=on-failure
-RestartSec=5
-[Install]
-WantedBy=multi-user.target
-EOF'
+WantedBy=multi-user.target" | sudo tee /etc/systemd/system/kubelet.service
 
 ### DOWNLOAD: kubelet
-if [[ ! -e '$TMPDIR'/'$KUBERNETES_VERSION'-kubelet-amd64 && ! -e /usr/local/bin/kubelet ]]; then
-    wget -O $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64 http://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubelet
-    chmod +x $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64
-    sudo cp $TMPDIR/$KUBERNETES_VERSION-kubelet-amd64 /usr/local/bin/kubelet
+if [[ ! -e '${TMPDIR}'/'${KUBERNETES_VERSION}'-kubelet-${KUBE_ARCH} && ! -e /usr/local/bin/kubelet ]]; then
+    wget -O ${TMPDIR}/${KUBERNETES_VERSION}-kubelet-${KUBE_ARCH} http://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/linux/${KUBE_ARCH}/kubelet
+    chmod +x ${TMPDIR}/${KUBERNETES_VERSION}-kubelet-${KUBE_ARCH}
+    sudo cp ${TMPDIR}/${KUBERNETES_VERSION}-kubelet-${KUBE_ARCH} /usr/local/bin/kubelet
 fi
 
 ### DOWNLOAD: cni
-if [[ ! -e '$TMPDIR'/'$CNI_VERSION'-cni-amd64.tgz && ! -e /opt/cni/bin ]]; then
-    wget -O $TMPDIR/$CNI_VERSION-cni-amd64.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-amd64-$CNI_VERSION.tgz
+if [[ ! -e '${TMPDIR}'/'$CNI_VERSION'-cni-${KUBE_ARCH}.tgz && ! -e /opt/cni/bin ]]; then
+    wget -O ${TMPDIR}/$CNI_VERSION-cni-${KUBE_ARCH}.tgz https://github.com/containernetworking/cni/releases/download/$CNI_VERSION/cni-${KUBE_ARCH}-$CNI_VERSION.tgz
     sudo mkdir -p /opt/cni/bin
-    sudo tar -xf $TMPDIR/$CNI_VERSION-cni-amd64.tgz -C /opt/cni/bin/
+    sudo tar -xf ${TMPDIR}/$CNI_VERSION-cni-${KUBE_ARCH}.tgz -C /opt/cni/bin/
 fi
 
 ### DEPLOY KUBERNETES SELF-HOSTED CLUSTER:
 echo_green "\nPhase VIII: Preparing the environment for Kubernetes to run for the first time:"
 sudo systemctl daemon-reload
-sudo systemctl restart kubelet.service
 sudo systemctl enable kubelet.service
-sudo mv $BOOTKUBE_DIR/bootkube-ci/kubeconfig /etc/kubernetes/
+sudo systemctl restart kubelet.service
+sudo cp ./kubeconfig /etc/kubernetes/
+sudo cp ./ca.crt /etc/kubernetes/ca.crt
