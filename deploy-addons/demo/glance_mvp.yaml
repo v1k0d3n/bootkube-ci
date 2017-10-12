@@ -1,0 +1,16 @@
+pod:
+  replicas:
+    api: 2
+    registry: 2
+
+endpoints:
+  identity:
+    auth:
+      admin:
+        username: charter_admin
+        project_name: ctec
+      user:
+        project_name: demo
+
+manifests:
+  job_drop_db: true

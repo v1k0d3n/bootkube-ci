@@ -1,0 +1,56 @@
+conf:
+  nova:
+    libvirt:
+      virt_type: qemu
+
+bootstrap:
+  flavors:
+    options:
+      vnf_tiny:
+          name: "vnf.tiny"
+          id: "auto"
+          ram: 512
+          disk: 1
+          vcpus: 1
+      vnf_small:
+          name: "vnf.small"
+          id: "auto"
+          ram: 2048
+          disk: 20
+          vcpus: 1
+      vnf_medium:
+          name: "vnf.medium"
+          id: "auto"
+          ram: 4096
+          disk: 40
+          vcpus: 2
+      vnf_large:
+          name: "vnf.large"
+          id: "auto"
+          ram: 8192
+          disk: 80
+          vcpus: 4
+      vnf_xlarge:
+          name: "vnf.xlarge"
+          id: "auto"
+          ram: 16384
+          disk: 160
+          vcpus: 8
+
+network:
+  metadata:
+    ip: 10.96.120.234
+
+manifests:
+  job_db_drop: true
+
+endpoints:
+  identity:
+    auth:
+      admin:
+        username: charter_admin
+        project_name: ctec
+      user:
+        project_name: demo
+      neutron:
+        project_name: demo

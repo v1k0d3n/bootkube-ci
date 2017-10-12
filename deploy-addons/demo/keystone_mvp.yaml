@@ -1,0 +1,13 @@
+pod:
+  replicas:
+    api: 2
+
+bootstrap:
+  enabled: true
+  script: |
+    openstack project create --description "Charter CTEC" ctec
+    openstack user create --password password charter_admin
+    openstack role add --user charter_admin --user-domain default --project ctec --project-domain default "admin"
+    openstack project create --description "Demo Project" demo
+    openstack user create --password password demo
+    openstack role add --user demo --user-domain default --project ctec --project-domain default "_member_"
