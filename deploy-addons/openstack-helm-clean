@@ -16,7 +16,6 @@
 kubectl delete pvc mysql-data-mariadb-0 -n openstack
 kubectl delete pvc mysql-data-mariadb-1 -n openstack
 kubectl delete pvc mysql-data-mariadb-2 -n openstack
-kubectl delete namespace openstack
 helm delete --purge magnum
 helm delete --purge mistral
 helm delete --purge senlin
@@ -29,12 +28,18 @@ helm delete --purge heat
 helm delete --purge glance
 helm delete --purge keystone
 helm delete --purge memcached
-helm delete --purge rabbitmq-etcd
+helm delete --purge etcd-rabbitmq
 helm delete --purge rabbitmq
 helm delete --purge mariadb
 helm delete --purge bootstrap-openstack
 helm delete --purge bootstrap-ceph
 helm delete --purge ceph
+helm delete --purge ceph-openstack-config
+helm delete --purge libvirt
+helm delete --purge ingress
+helm delete --purge openvswitch
+helm delete --purge radosgw-openstack
+kubectl delete namespace openstack
 sudo rm -rf /var/lib/openstack-helm
 sudo rm -rf /var/lib/nova
 sudo rm -rf /home/$USER/openstack-helm

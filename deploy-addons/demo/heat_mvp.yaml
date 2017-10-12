@@ -1,0 +1,10 @@
+endpoints:
+  identity:
+    auth:
+      admin:
+        username: charter_admin
+        project_name: ctec
+      user:
+        project_name: demo
+      trustee:
+        project_name: demo
