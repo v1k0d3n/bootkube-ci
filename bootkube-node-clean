@@ -36,5 +36,7 @@ for node in $(cat ./deploy-node/nodes); do
     ssh -tq ${node} "cd ${BOOTKUBE_DIR}/bootkube-ci/ && \
     ./bootkube-clean";
   echo -e "Telling the Kubernetes Master to remove ${node}";
-  kubectl delete node ${node}
+  kubectl drain ${node} --force --ignore-daemonsets;
+  kubectl delete node ${node};
+  ssh -tq ${node} "sudo rm -rf ${BOOTKUBE_DIR}/bootkube-ci/";
 done

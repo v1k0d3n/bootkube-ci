@@ -98,8 +98,8 @@ if [ ! -e /usr/local/bin/hostess ]; then
     sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_$KUBE_ARCH
     sudo chmod +x /usr/local/bin/hostess
 fi
-sudo hostess add $KUBE_DNS_API $KUBE_IP
-sudo hostess add kubernetes $KUBE_IP
+sudo hostess add $KUBE_DNS_API $KUBE_MASTER
+sudo hostess add kubernetes $KUBE_MASTER
 sudo hostess fix
 
 ### PREPARE: /etc/systemd/system/kubelet.service
@@ -180,7 +180,7 @@ echo_green "\nComplete!"
 
 ### RENDER ASSETS:
 echo_green "\nPhase VI: Running Bootkube to render the Kubernetes assets:"
-bootkube render --asset-dir=$BOOTKUBE_DIR/.bootkube --experimental-self-hosted-etcd --etcd-servers=http://10.3.0.15:12379 --api-servers=https://$KUBE_IP:$KUBE_SVC_PORT --pod-cidr=$KUBE_POD_CIDR --service-cidr=$KUBE_SVC_CIDR
+bootkube render --asset-dir=$BOOTKUBE_DIR/.bootkube --experimental-self-hosted-etcd --etcd-servers=http://10.3.0.15:12379 --api-servers=https://$KUBE_DNS_API:$KUBE_SVC_PORT,https://$KUBE_IP:$KUBE_SVC_PORT --pod-cidr=$KUBE_POD_CIDR --service-cidr=$KUBE_SVC_CIDR
 sudo rm -rf $BOOTKUBE_DIR/.bootkube/manifests/kube-flannel*
 if [ $KUBE_SDN = "kube-router" ]; then
    echo_yellow "\nSDN variable is set to kube-router. Proceeding to remove kube-proxy manifests for Bootkube!" && sudo rm -rf $BOOTKUBE_DIR/.bootkube/manifests/kube-proxy.yaml
