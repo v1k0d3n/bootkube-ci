@@ -74,8 +74,8 @@ if [ ! -e /usr/local/bin/hostess ]; then
     sudo wget -O /usr/local/bin/hostess https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_${KUBE_ARCH}
     sudo chmod +x /usr/local/bin/hostess
 fi
-sudo hostess add ${KUBE_DNS_API} ${KUBE_IP}
-sudo hostess add kubernetes ${KUBE_IP}
+sudo hostess add ${KUBE_DNS_API} ${KUBE_MASTER}
+sudo hostess add kubernetes ${KUBE_MASTER}
 sudo hostess fix
 
 ### PREPARE: /etc/systemd/system/kubelet.service
@@ -103,13 +103,13 @@ ExecStart=/usr/local/bin/kubelet \\
   --kubeconfig=/etc/kubernetes/kubeconfig \\
   --lock-file=/var/run/lock/kubelet.lock \\
   --minimum-container-ttl-duration=3m0s \\
-  --node-labels=node-role.kubernetes.io/master \\
+  --node-labels=node-role.kubernetes.io/node \\
   --node-ip='${KUBE_IP}' \\
   --network-plugin=cni \\
   --pod-manifest-path=/etc/kubernetes/manifests \\
   --register-with-taints=node-role.kubernetes.io/master=:NoSchedule \\
   --require-kubeconfig \\
-  --v=8
+  --v=2
 Restart=always
 RestartSec=5
 [Install]
@@ -131,8 +131,14 @@ fi
 
 ### DEPLOY KUBERNETES SELF-HOSTED CLUSTER:
 echo_green "\nPhase VIII: Preparing the environment for Kubernetes to run for the first time:"
+sudo cp ./kubeconfig /etc/kubernetes/
+sudo cp ./ca.crt /etc/kubernetes/ca.crt
+
+### ORDERING IS TEMP UNTIL THIS CAN BE REFINED:
+sudo hostess add ${KUBE_DNS_API} ${KUBE_MASTER}
+sudo hostess add kubernetes ${KUBE_MASTER}
+sudo hostess fix
+
 sudo systemctl daemon-reload
 sudo systemctl enable kubelet.service
 sudo systemctl restart kubelet.service
-sudo cp ./kubeconfig /etc/kubernetes/
-sudo cp ./ca.crt /etc/kubernetes/ca.crt
