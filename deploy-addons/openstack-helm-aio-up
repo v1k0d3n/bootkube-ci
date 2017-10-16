@@ -88,11 +88,12 @@ echo ""
 
 ### START HELM LOCAL REPO:
 helm serve &
-helm repo remove stable
+helm repo remove stable || true
 helm repo add $HELM_REPO "http://localhost:8879/charts"
 
 pwd
-make
+( cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm ; make )
+( cd $BOOTKUBE_DIR/bootkube-ci/openstack-helm-addons ; make )
 
 ### BRING UP CEPH STORAGE:
 sudo helm install --namespace=ceph $HELM_REPO/ceph --name=ceph \
@@ -174,18 +175,47 @@ done
 
 ### BRING UP THE DATABASE:
 helm install --name=mariadb $HELM_REPO/mariadb --namespace=openstack \
-  --set pod.replicas.server=1
+  --set pod.replicas.server=$MARIADB_REPLICAS
+
+echo -e -n "Waiting for mariadb components to be in a running state..."
+while true; do
+  running_count=$(sudo kubectl --kubeconfig=/etc/kubernetes/kubeconfig get pods -n openstack --no-headers 2>/dev/null | grep "Running" | grep "mariadb" | wc -l)
+  ### Expect all components to be out of a "ContainerCreating" state before collecting log data (this includes CrashLoopBackOff states):
+  if [ "$running_count" -ge $MARIADB_REPLICAS ]; then
+    break
+  fi
+  echo -n "."
+  sleep 1
+done
 
 ### BRING UP THE INFRASTRUCTURE COMPONENTS:
 helm install --name=memcached $HELM_REPO/memcached --namespace=openstack
 helm install --name=etcd-rabbitmq $HELM_REPO/etcd --namespace=openstack
 helm install --name=rabbitmq $HELM_REPO/rabbitmq --namespace=openstack \
-  --set pod.replicas.server=1
+  --set pod.replicas.server=$RABBITMQ_REPLICAS
 helm install --name=ingress $HELM_REPO/ingress --namespace=openstack
 helm install --name=libvirt $HELM_REPO/libvirt --namespace=openstack
-helm install --name=openvswitch $HELM_REPO/openvswitch --namespace=openstack
+helm install --name=openvswitch $HELM_REPO/openvswitch --namespace=openstack \
+  --set network.interface.external=$OVS_EXTERNAL_IFACE
 
 ### BRING UP KEYSTONE:
+echo "Deploying keystone with overrides:"
+echo "pod:
+  replicas:
+    api: 2
+
+bootstrap:
+  enabled: true
+  script: |
+    openstack project create --description 'Charter CTEC' $OS_ADMIN_PROJECT
+    openstack user create --password $OS_ADMIN_PASSWORD $OS_ADMIN_USERNAME
+    openstack role add --user $OS_ADMIN_USERNAME --user-domain default --project $OS_ADMIN_PROJECT --project-domain default 'admin'
+    openstack project create --description 'Demo Project' $OS_SVC_PROJECT
+    openstack user create --password $OS_SVC_PASSWORD $OS_SVC_USERNAME
+    openstack role add --user $OS_SVC_USERNAME --user-domain default --project $OS_ADMIN_PROJECT --project-domain default '_member_'
+
+manifests:
+  job_db_drop: true" | tee $BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/keystone_mvp.yaml
 helm install --namespace=openstack --name=keystone $HELM_REPO/keystone \
    --values=$BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/keystone_mvp.yaml
 
@@ -204,25 +234,182 @@ helm install --namespace=openstack $HELM_REPO/ceph --name=radosgw-openstack \
   --set deployment.rgw_keystone_user_and_endpoints=true
 
 ### BRING UP HORIZON INTERFACE:
+echo "Deploying horizon with overrides:"
+echo "network:
+  enable_node_port: true
+
+manifests:
+  job_db_drop: true" | tee $BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/horizon_mvp.yaml
 helm install --namespace=openstack --name=horizon $HELM_REPO/horizon \
   --values=$BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/horizon_mvp.yaml
 
 ### BRING UP GLANCE:
+echo "Deploying glance with overrides:"
+echo "pod:
+  replicas:
+    api: 2
+    registry: 2
+
+endpoints:
+  identity:
+    auth:
+      admin:
+        username: $OS_ADMIN_USERNAME
+        project_name: $OS_ADMIN_PROJECT
+      user:
+        project_name: $OS_SVC_PROJECT
+
+manifests:
+  job_drop_db: true" | tee $BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/glance_mvp.yaml
 helm install --namespace=openstack --name=glance $HELM_REPO/glance \
-  --values=$BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/glance_mvp.yaml
+  --values=$BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/glance_mvp.yaml \
   --set storage=$GLANCE_BACKEND
 
 ### BRING UP HEAT ORCHESTRATION FOR OPENSTACK:
+echo "Deploying heat with overrides:"
+echo "endpoints:
+  identity:
+    auth:
+      admin:
+        username: charter_admin
+        project_name: ctec
+      user:
+        project_name: demo
+      trustee:
+        project_name: demo
+
+manifests:
+  job_db_drop: true" | tee $BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/heat_mvp.yaml
 helm install --namespace=openstack --name=heat $HELM_REPO/heat \
   --values=$BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/heat_mvp.yaml
 
-### BRING UP NEUTRON:
+### BRING UP NOVA:
+echo "Deploying nova with overrides:"
+echo "conf:
+  nova:
+    libvirt:
+      virt_type: qemu
+
+bootstrap:
+  flavors:
+    options:
+      vnf_tiny:
+          name: "vnf.tiny"
+          id: "auto"
+          ram: 512
+          disk: 1
+          vcpus: 1
+      vnf_small:
+          name: "vnf.small"
+          id: "auto"
+          ram: 2048
+          disk: 20
+          vcpus: 1
+      vnf_medium:
+          name: "vnf.medium"
+          id: "auto"
+          ram: 4096
+          disk: 40
+          vcpus: 2
+      vnf_large:
+          name: "vnf.large"
+          id: "auto"
+          ram: 8192
+          disk: 80
+          vcpus: 4
+      vnf_xlarge:
+          name: "vnf.xlarge"
+          id: "auto"
+          ram: 16384
+          disk: 160
+          vcpus: 8
+
+network:
+  metadata:
+    ip: 10.96.120.234
+
+manifests:
+  job_db_drop: true
+
+endpoints:
+  identity:
+    auth:
+      admin:
+        username: $OS_ADMIN_USERNAME
+        project_name: $OS_ADMIN_PROJECT
+      user:
+        project_name: $OS_SVC_PROJECT
+      neutron:
+        project_name: $OS_SVC_PROJECT" | tee $BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/nova_mvp.yaml
 helm install --namespace=openstack $HELM_REPO/nova --name=nova \
   --values=$BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/nova_mvp.yaml
 
+### BRING UP NEUTRON:
+echo "Deploying neutron with overrides:"
+echo "bootstrap:
+  enabled: true
+  script: |
+    openstack network create --share --external --provider-physical-network "$PROVIDER_NETWORK" --provider-network-type vlan --provider-segment '$PROVIDER_SEGMENT' provider-$PROVIDER_SEGMENT
+
+    openstack subnet create --subnet-range "$SUBNET_RANGE" --gateway "$GATEWAY" --network provider-$PROVIDER_SEGMENT --allocation-pool start="$ALLOC_POOL_START",end="$ALLOC_POOL_END" --dns-nameserver "$DNS_NAMESERVER" provider-subnet
+
+network:
+  interface:
+    external: $OVS_EXTERNAL_IFACE
+
+conf:
+  neutron:
+    DEFAULT:
+      l3_ha: False
+      min_l3_agents_per_router: 1
+      max_l3_agents_per_router: 1
+      l3_ha_network_type: vxlan
+      dhcp_agents_per_network: 1
+  plugins:
+    ml2_conf:
+      ml2_type_vlan:
+        network_vlan_ranges: $PROVIDER_NETWORK:$PROVIDER_SEGMENT:$PROVIDER_SEGMENT
+    openvswitch_agent:
+      agent:
+        tunnel_types: vxlan
+      ovs:
+        bridge_mappings: public:br-ex
+  metadata_agent:
+    DEFAULT:
+      nova_metadata_ip: 10.96.120.234
+
+endpoints:
+  identity:
+    auth:
+      admin:
+        username: $OS_ADMIN_USERNAME
+        project_name: $OS_ADMIN_PROJECT
+      user:
+        project_name: $OS_SVC_PROJECT
+      nova:
+        project_name: $OS_SVC_PROJECT
+
+manifests:
+  job_db_drop: true" | tee $BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/neutron_mvp.yaml
 helm install --namespace=openstack $HELM_REPO/neutron --name=neutron \
   --values=$BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/neutron_mvp.yaml
 
 ### BRING UP CINDER:
+echo "Deploying cinder with overrides:"
+echo "pod:
+  replicas:
+    api: 2
+
+endpoints:
+  identity:
+    auth:
+      admin:
+        username: $OS_ADMIN_USERNAME
+        project_name: $OS_ADMIN_PROJECT
+      user:
+        project_name: $OS_SVC_PROJECT
+
+manifests:
+  job_drop_db: true" | tee $BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/cinder_mvp.yaml
 helm install --namespace=openstack --name=cinder $HELM_REPO/cinder \
   --values=$BOOTKUBE_DIR/bootkube-ci/deploy-addons/demo/cinder_mvp.yaml

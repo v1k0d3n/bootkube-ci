@@ -1,5 +1,0 @@
-network:
-  enable_node_port: true
-
-manifests:
-  job_db_drop: true
