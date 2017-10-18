@@ -7,4 +7,25 @@ export CEPH_CLUSTER_NETWORK=${HOST_SUB_CIDR}  ### CEPH CLUSTER NETWORK        ##
 export CEPH_PUBLIC_NETWORK=${HOST_SUB_CIDR}   ### CEPH PUBLIC NETWORK         ###
 export CEPH_RGW_KEYSTONE_ENABLED=true         ### CEPH RGW ENABLED KEYSTONE   ###
 export MARIADB_SIZE=15Gi                      ### MARIADB PVC SIZE            ###
+export MARIADB_REPLICAS=1                     ### MARIADB REPLICA_COUNT       ###
+export RABBITMQ_REPLICAS=1                    ### RABBITMQ REPLICA COUNT      ###
+export OVS_EXTERNAL_IFACE=eth1                ### OPENVSWITCH EXT IFACE       ###
 export GLANCE_BACKEND=radosgw                 ### GLANCE BACKEND OPTIONS      ###
+
+
+# OS TENANT INFO
+export OS_ADMIN_PROJECT=ctec                  ### OPENSTACK TENANT            ###
+export OS_ADMIN_USERNAME=charter_admin        ### OPENSTACK ADMIN USERNAME    ###
+export OS_ADMIN_PASSWORD=password             ### OPENSTACK ADMIN PASSWORD    ###
+export OS_SVC_PROJECT=demo                    ### OPENSTACK SVC TENANT        ###
+export OS_SVC_USERNAME=demo                   ### OPENSTACK SVC USERNAME      ###
+export OS_SVC_PASSWORD=password               ### OPENSTACK SVC PASSWORD      ###
+
+# NETWORKING
+export PROVIDER_NETWORK=public
+export PROVIDER_SEGMENT=100
+export SUBNET_RANGE=44.24.8.0/22
+export GATEWAY=44.24.8.1
+export ALLOC_POOL_START="44.24.8.100"
+export ALLOC_POOL_END="44.24.8.250"
+export DNS_NAMESERVER=44.128.12.15
