@@ -33,7 +33,7 @@ source .bootkube_env
 ## NEW INSTALLATIONS:
 for node in $(cat ./deploy-node/nodes); do
   echo -e "Creating bootkube-ci directory on ${node} in...";
-  ssh -tq ${node} "sudo mkdir -p ${BOOTKUBE_DIR}/bootkube-ci";
+  ssh -o "StrictHostKeyChecking no" -tq ${node} "sudo mkdir -p ${BOOTKUBE_DIR}/bootkube-ci";
   ssh -tq ${node} "sudo chown -R ${USER}:${USER} ${BOOTKUBE_DIR}/bootkube-ci";
   echo -e "Copying bootkube-ci node files to ${node}...";
   scp ${BOOTKUBE_DIR}/bootkube-ci/deploy-node/node-add ${node}:${BOOTKUBE_DIR}/bootkube-ci;
