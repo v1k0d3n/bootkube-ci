@@ -25,7 +25,8 @@ By default, the Bootkube generated Kubernetes configuration will not work with A
 
 ```
 ### Move Old Kubernetes Config:
-source ${BOOTKUBE_DIR}/.bootkube.env
+#   Source .bootkube_env file in bootkube-ci folder:
+source .bootkube_env
 sudo mv ${HOME}/.kube/config ${HOME}/
 
 ### Create Valid Kubernetes User Config:

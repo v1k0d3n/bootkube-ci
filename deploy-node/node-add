@@ -32,12 +32,13 @@ ls -asl
 
 source .bootkube_env
 
+##  USE ONLY IN CASES WHERE HOST ALREADY NOT DEFINED IN /etc/hosts:
 ### Add IP Address of Hosts in /etc/hosts:
-HOST_IFACE=$(ip route | grep "^default" | head -1 | awk '{ print $5 }')
-LOCAL_IP=$(ip addr | awk "/inet/ && /${HOST_IFACE}/{sub(/\/.*$/,\"\",\$2); print \$2}")
-cat << EOF | sudo tee -a /etc/hosts
-${LOCAL_IP} $(hostname)
-EOF
+#HOST_IFACE=$(ip route | grep "^default" | head -1 | awk '{ print $5 }')
+#LOCAL_IP=$(ip addr | awk "/inet/ && /${HOST_IFACE}/{sub(/\/.*$/,\"\",\$2); print \$2}")
+#cat << EOF | sudo tee -a /etc/hosts
+#${LOCAL_IP} $(hostname)
+#EOF
 
 ### NEW INSTALLATIONS:
 echo_green "\nPhase I: Installing system prerequisites:"
@@ -131,10 +132,7 @@ fi
 
 ### DEPLOY KUBERNETES SELF-HOSTED CLUSTER:
 echo_green "\nPhase VIII: Preparing the environment for Kubernetes to run for the first time:"
-sudo cp ./kubeconfig /etc/kubernetes/
-sudo cp ./ca.crt /etc/kubernetes/ca.crt
 
-### ORDERING IS TEMP UNTIL THIS CAN BE REFINED:
 sudo hostess add ${KUBE_DNS_API} ${KUBE_MASTER}
 sudo hostess add kubernetes ${KUBE_MASTER}
 sudo hostess fix
@@ -142,3 +140,7 @@ sudo hostess fix
 sudo systemctl daemon-reload
 sudo systemctl enable kubelet.service
 sudo systemctl restart kubelet.service
+
+cd ${BOOTKUBE_DIR}
+sudo cp bootkube-ci/kubeconfig /etc/kubernetes/
+sudo cp bootkube-ci/ca.crt /etc/kubernetes/
