@@ -59,6 +59,41 @@ openssl req -new -key ~/.kube_certs/${USER}.key -out ~/.kube_certs/${USER}.csr -
 openssl x509 -req -in ~/.kube_certs/${USER}.csr -CA ~/.bootkube/tls/ca.crt -CAkey ~/.bootkube/tls/ca.key -CAcreateserial -out ~/.kube_certs/${USER}.crt -days ${CERT_EXPIRATION}
 ```
 
+## Resizing Etcd Cluster:
+
+Bootkube leverages an [Etcd Operator](https://github.com/coreos/etcd-operator) provided by CoreOS. This means that Etcd can be dynamically scaled and various maintenance functions can be performed as well. To scale your Etcd cluster, you'll want to adjust the `size` definition located within the `spec` section of the deployed [Custom Resource (CRD)](https://kubernetes.io/docs/concepts/api-extension/custom-resources/). To obtain the CRD, export it and modify the size to the desired number of Etcd members.
+
+```
+# export the crd:
+kubectl get EtcdCluster -n kube-system -o yaml > ${HOME}/bootkube-ci/etcd-cluster-resize.yaml
+
+# example spec section below:
+  spec:
+    TLS:
+      static:
+        member:
+          peerSecret: etcd-peer-tls
+          serverSecret: etcd-server-tls
+        operatorSecret: etcd-client-tls
+    baseImage: quay.io/coreos/etcd
+    pod:
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      resources: {}
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+    selfHosted:
+      bootMemberClientEndpoint: https://10.96.0.20:12379
+    size: 1 ## << EDIT TO "size: 5"
+    version: 3.1.8
+    
+# save and apply:
+sudo kubectl apply -f ${HOME}/bootkube-ci/etcd-cluster-resize.yaml
+```
+
+
 ## Default Behavior
 
 The default behavior for this small project is to deploy the following:
